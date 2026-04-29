@@ -90,12 +90,20 @@
 
         <div class="rsvp-field rsvp-field--full rsvp-photo">
           <span class="rsvp-label">Capitol portrait (optional)</span>
-          <div class="rsvp-photo-row">
+
+          <div class="rsvp-photo__empty" id="photo-empty">
             <button type="button" class="key key--small is-ready" id="photo-add-btn">Open camera</button>
-            <img class="rsvp-photo-preview" id="photo-preview" hidden alt="Portrait preview">
-            <span class="rsvp-photo-status" id="photo-status">No portrait — initials will be used</span>
-            <button type="button" class="key-link" id="photo-clear-btn" hidden>Remove</button>
+            <span class="rsvp-photo__hint">Or skip — your initials will be used</span>
           </div>
+
+          <div class="rsvp-photo__filled" id="photo-filled" hidden>
+            <img class="rsvp-photo__preview" id="photo-preview" alt="">
+            <div class="rsvp-photo__filled-info">
+              <span class="rsvp-photo__status">Portrait recorded</span>
+              <button type="button" class="rsvp-photo__retake" id="photo-clear-btn">Retake</button>
+            </div>
+          </div>
+
           <input type="hidden" name="profile_photo" id="profile-photo-input">
         </div>
 
@@ -249,8 +257,9 @@
     const btnRetake = document.getElementById("webcam-retake");
     const btnUse = document.getElementById("webcam-use");
     const btnCancel = document.getElementById("webcam-cancel");
+    const photoEmpty = document.getElementById("photo-empty");
+    const photoFilled = document.getElementById("photo-filled");
     const photoPreview = document.getElementById("photo-preview");
-    const photoStatus = document.getElementById("photo-status");
     const photoInput = document.getElementById("profile-photo-input");
     const photoClearBtn = document.getElementById("photo-clear-btn");
     let mediaStream = null;
@@ -321,20 +330,18 @@
       const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
       photoInput.value = dataUrl;
       photoPreview.src = dataUrl;
-      photoPreview.hidden = false;
-      photoStatus.textContent = "Portrait recorded";
-      photoStatus.style.color = "#86e870";
-      photoClearBtn.hidden = false;
+      photoEmpty.hidden = true;
+      photoFilled.hidden = false;
       closeCamera();
     });
 
+    // "Retake" — clears the saved photo and re-opens the camera
     photoClearBtn.addEventListener("click", () => {
       photoInput.value = "";
-      photoPreview.hidden = true;
       photoPreview.src = "";
-      photoStatus.textContent = "No portrait — initials will be used";
-      photoStatus.style.color = "";
-      photoClearBtn.hidden = true;
+      photoFilled.hidden = true;
+      photoEmpty.hidden = false;
+      openCamera();
     });
 
     // ---- Form submit (triggered by tuner knob) ------------------------

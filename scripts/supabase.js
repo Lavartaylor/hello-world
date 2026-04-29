@@ -41,24 +41,34 @@ export async function fetchTribute(slug) {
 // --- RSVPs ----------------------------------------------------------
 
 export async function submitRsvp({ name, attending, companion_count, companion_names, contact, profile_photo }) {
-  const payload = {
+  const base = {
     name,
     attending,
     companion_count: parseInt(companion_count || 0, 10),
     companion_names: (companion_names || []).filter(Boolean),
     contact: contact || null
   };
-  // Only include the photo column when there's actually a photo, so a
-  // missing-column error (migration not run) doesn't break unrelated RSVPs.
-  if (profile_photo) payload.profile_photo = profile_photo;
+  const payloadWithPhoto = profile_photo ? { ...base, profile_photo } : base;
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("hg_rsvps")
-    .insert(payload)
+    .insert(payloadWithPhoto)
     .select()
     .single();
+
+  // If the migration adding profile_photo hasn't been run, retry without it
+  // so the RSVP still goes through. The photo just gets dropped silently.
+  if (error && /profile_photo/i.test(error.message || "")) {
+    console.warn("[submitRsvp] profile_photo column missing — retrying without photo");
+    ({ data, error } = await supabase
+      .from("hg_rsvps")
+      .insert(base)
+      .select()
+      .single());
+  }
+
   if (error) {
-    console.error("[submitRsvp] payload:", payload, "error:", error);
+    console.error("[submitRsvp] payload:", payloadWithPhoto, "error:", error);
     throw error;
   }
   return data;
