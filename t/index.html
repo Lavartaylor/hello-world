@@ -209,9 +209,9 @@
 
       await wait(400);
       cont.classList.add("is-ready");
+      cont.setAttribute("aria-label", "Acknowledge the reaping");
       cont.addEventListener("click", () => {
         cont.disabled = true;
-        cont.textContent = "Standing by…";
       });
     }
 
