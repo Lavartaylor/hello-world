@@ -75,12 +75,14 @@
     </footer>
   </div>
 
-  <!-- Keyboard input — Lock In button -->
-  <div class="keyboard-bar">
-    <button class="key" id="lock-key" type="button" hidden disabled>
-      Lock in your wager
-      <span class="key__caption">select a citizen above to enable</span>
+  <!-- Lock-in tuner knob (same UI primitive as RSVP transmit) -->
+  <div class="tuner-knob is-disabled" id="lock-tuner" hidden>
+    <div class="tuner-knob__label">Lock In</div>
+    <button type="button" class="tuner-knob__dial" id="lock-dial" disabled>
+      <div class="tuner-knob__indicator"></div>
+      <div class="tuner-knob__hub"></div>
     </button>
+    <div class="tuner-knob__caption" id="lock-caption">Select a citizen to enable</div>
   </div>
 
   <script type="module">
@@ -151,9 +153,8 @@
 
       await wait(500);
       renderGrid();
-      const lockKey = document.getElementById("lock-key");
-      lockKey.hidden = false;
-      lockKey.classList.add("is-ready");
+      const lockTuner = document.getElementById("lock-tuner");
+      lockTuner.hidden = false;
     }
 
     function renderGrid() {
@@ -186,31 +187,39 @@
       grid.querySelectorAll(".vote-card").forEach(c => {
         c.classList.toggle("is-selected", c.dataset.slug === slug);
       });
-      const lockKey = document.getElementById("lock-key");
-      lockKey.disabled = false;
+      const tuner = document.getElementById("lock-tuner");
+      const dial = document.getElementById("lock-dial");
+      const caption = document.getElementById("lock-caption");
+      tuner.classList.remove("is-disabled");
+      dial.disabled = false;
       const pick = allTributes.find(t => t.slug === slug);
-      lockKey.querySelector(".key__caption").textContent =
-        `betting on ${pick.name} — district ${pick.district}`;
+      caption.textContent = `Betting on ${pick.name} · D${pick.district}`;
     }
 
-    document.getElementById("lock-key").addEventListener("click", async (e) => {
+    document.getElementById("lock-dial").addEventListener("click", async () => {
       if (!selectedSlug) return;
-      const lockKey = e.currentTarget;
-      lockKey.disabled = true;
-      lockKey.querySelector(".key__caption").textContent = "transmitting…";
+      const tuner = document.getElementById("lock-tuner");
+      const dial = document.getElementById("lock-dial");
+      const caption = document.getElementById("lock-caption");
+      dial.disabled = true;
+      tuner.classList.add("is-active");
+      caption.textContent = "Transmitting…";
       try {
         await submitVote(voterTribute.slug, selectedSlug);
+        tuner.classList.add("is-locked");
+        caption.textContent = "Wager locked";
         showLockedView(selectedSlug);
       } catch (err) {
         console.error("Vote submission failed:", err);
-        lockKey.disabled = false;
-        lockKey.querySelector(".key__caption").textContent = "transmission failed — try again";
+        dial.disabled = false;
+        tuner.classList.remove("is-active");
+        caption.textContent = "Transmission failed — try again";
       }
     });
 
     function showLockedView(targetSlug) {
       const pick = allTributes.find(t => t.slug === targetSlug);
-      const lockKey = document.getElementById("lock-key");
+      const tuner = document.getElementById("lock-tuner");
       const grid = document.getElementById("vote-grid");
       const locked = document.getElementById("vote-locked");
       const heading = document.getElementById("heading");
@@ -222,7 +231,7 @@
       body.innerHTML = `Your prediction has been transmitted to the Gamemakers and may not be amended.`;
 
       grid.hidden = true;
-      lockKey.hidden = true;
+      tuner.hidden = true;
       locked.hidden = false;
       document.getElementById("locked-name").textContent = pick ? pick.name.toUpperCase() : targetSlug.toUpperCase();
       document.getElementById("locked-district").textContent = pick ? `District ${String(pick.district).padStart(2, "0")}` : "";

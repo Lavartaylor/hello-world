@@ -182,8 +182,8 @@ body::before {
 .artifact__seal img {
   display: block;
   margin: 0 auto;
-  width: 88px;
-  height: 88px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
 }
 
@@ -432,10 +432,10 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   justify-content: space-between;
   align-items: flex-start;
   font-family: var(--font-utility);
-  font-size: var(--fs-xs);
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
   color: #e8d49a;
   gap: var(--sp-5);
 }
@@ -448,11 +448,11 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 }
 .broadcast-header__channel::before {
   content: "CH-01";
-  padding: 2px 6px;
+  padding: 3px 8px;
   background: rgba(232, 212, 154, 0.15);
-  border: 1px solid rgba(232, 212, 154, 0.3);
-  font-size: 0.7em;
-  letter-spacing: 0;
+  border: 1px solid rgba(232, 212, 154, 0.4);
+  font-size: 0.85em;
+  letter-spacing: 0.02em;
 }
 
 /* Citizen HUD — top-right identity + points readout */
@@ -473,21 +473,21 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 }
 .broadcast-hud__label {
   font-family: var(--font-utility);
-  font-weight: 500;
-  font-size: 0.65rem;
+  font-weight: 700;
+  font-size: 0.78rem;
   text-transform: uppercase;
-  color: #ad8a40;
-  letter-spacing: 0;
+  color: #d4b870;
+  letter-spacing: 0.02em;
 }
 .broadcast-hud__value {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 1.15rem;
   color: #fff8e0;
   letter-spacing: 0;
 }
 .broadcast-hud__row--points .broadcast-hud__value {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   color: #ffd870;
   text-shadow:
     0 1px 0 rgba(0, 0, 0, 0.85),
@@ -498,19 +498,22 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
   max-width: 980px;
   margin: 0 auto;
   width: 100%;
+  /* Anchor content top-aligned with breathing room above so the typewriter
+     reveals downward without re-centering with each new line. */
+  padding-top: clamp(40px, 8vh, 80px);
 }
 
 .broadcast-seal {
-  width: 96px;
-  height: 96px;
+  width: clamp(120px, 14vw, 180px);
+  height: clamp(120px, 14vw, 180px);
   margin-bottom: var(--sp-5);
   color: #e8d49a;
-  filter: drop-shadow(0 0 12px rgba(232, 212, 154, 0.4));
+  filter: drop-shadow(0 0 18px rgba(232, 212, 154, 0.45));
 }
 .broadcast-seal svg,
 .broadcast-seal img {
@@ -1025,10 +1028,22 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   line-height: 1.3;
 }
 
-/* On narrower viewports the knob would overlap the form — hide it and
-   the page can fall back to an inline submit if needed. */
+/* On narrower viewports the knob drops into the page flow below content
+   so it never overlaps. Smaller dial, label sits to the left. */
 @media (max-width: 1100px) {
-  .tuner-knob { display: none; }
+  .tuner-knob {
+    position: static;
+    transform: none;
+    flex-direction: row;
+    margin: var(--sp-5) auto var(--sp-4);
+    gap: var(--sp-4);
+    justify-content: center;
+  }
+  .tuner-knob__dial { width: 96px; height: 96px; }
+  .tuner-knob__indicator { top: 5px; height: 18px; }
+  .tuner-knob__hub { width: 28px; height: 28px; }
+  .tuner-knob__label { font-size: 0.85rem; }
+  .tuner-knob__caption { font-size: 0.65rem; max-width: 120px; }
 }
 
 /* ========================================================
@@ -1342,10 +1357,10 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 }
 .leaderboard__row {
   display: grid;
-  grid-template-columns: 48px 56px 1fr auto;
+  grid-template-columns: 56px 72px 1fr auto;
   align-items: center;
   gap: var(--sp-4);
-  padding: 10px 16px;
+  padding: 12px 18px;
   background: rgba(0, 14, 30, 0.5);
   border: 1px solid rgba(255, 220, 120, 0.15);
   text-align: left;
@@ -1370,8 +1385,8 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   letter-spacing: 0;
 }
 .leaderboard__seal {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
 }
@@ -1478,11 +1493,11 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
     0 1px rgba(0, 0, 0, 0.85);
 }
 .shop-item__tag {
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #ad8a40;
+  color: #d4b870;
   margin-bottom: 2px;
 }
 .shop-item--sabotage .shop-item__tag {
