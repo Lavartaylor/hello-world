@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="../styles/reset.css">
-  <link rel="stylesheet" href="../styles/tokens.css">
-  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
 </head>
 <body data-role="tribute">
 
@@ -56,13 +56,13 @@
   </main>
 
   <script type="module">
-    import { typeInto } from "../scripts/typewriter.js";
-    import { unlockAudio, dingBell } from "../scripts/audio.js";
-    import { jitterChars, jitterEls } from "../scripts/jitter.js";
-    import { loadTributes, getSlug, findTribute, districtName } from "../scripts/data.js";
+    import { typeInto } from "/scripts/typewriter.js";
+    import { unlockAudio, dingBell } from "/scripts/audio.js";
+    import { jitterChars, jitterEls } from "/scripts/jitter.js";
+    import { loadTributes, getSlug, findTribute, districtName } from "/scripts/data.js";
 
-    const CAPITOL_SEAL_URL = "../assets/seals/capitol.svg";
-    const DISTRICT_SEAL_URL = (n) => `../assets/seals/district-${n}.svg`;
+    const CAPITOL_SEAL_URL = "/assets/seals/capitol.svg";
+    const DISTRICT_SEAL_URL = (n) => `/assets/seals/district-${n}.svg`;
 
     async function fetchInlineSVG(url) {
       try {

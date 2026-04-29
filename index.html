@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="styles/reset.css">
-  <link rel="stylesheet" href="styles/tokens.css">
-  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
   <style>
     .holding {
       width: min(640px, 100%);
@@ -60,7 +60,7 @@
     </div>
   </main>
   <script>
-    fetch("assets/seals/capitol.svg")
+    fetch("/assets/seals/capitol.svg")
       .then(r => r.text())
       .then(svg => { document.getElementById("seal").innerHTML = svg; });
   </script>

@@ -2,7 +2,7 @@
 // Reads slug from URL: /t/?slug=xxx (dev) or /t/{slug}/ (prod, with rewrite)
 
 export async function loadTributes() {
-  const candidates = ["../data/tributes.json", "/data/tributes.json", "data/tributes.json"];
+  const candidates = ["/data/tributes.json", "../data/tributes.json", "data/tributes.json"];
   let data = null;
   for (const path of candidates) {
     try {
