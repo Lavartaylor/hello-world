@@ -47,74 +47,90 @@
     </header>
 
     <main class="broadcast-main">
-      <h1 class="broadcast-heading" id="heading"></h1>
-      <p class="broadcast-subheading" id="subheading"></p>
-      <div class="broadcast-body" id="body"></div>
-
-      <form class="rsvp-form" id="rsvp-form" hidden>
-        <label class="rsvp-field">
-          <span class="rsvp-label">Citizen name</span>
-          <input type="text" name="name" required autocomplete="name" placeholder="As recorded by the Capitol">
-        </label>
-
-        <label class="rsvp-field">
-          <span class="rsvp-label">Traveling companions</span>
-          <select name="companion_count" id="companion-count">
-            <option value="0">0 — I travel alone</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </label>
-
-        <fieldset class="rsvp-field rsvp-field--choice">
-          <legend class="rsvp-label">Declaration of attendance</legend>
-          <div class="rsvp-radios">
-            <label class="rsvp-radio">
-              <input type="radio" name="attending" value="yes" required>
-              <span>I will attend the reaping</span>
-            </label>
-            <label class="rsvp-radio">
-              <input type="radio" name="attending" value="no">
-              <span>I decline. Long live Panem.</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <label class="rsvp-field rsvp-field--full">
-          <span class="rsvp-label">Address of record (optional)</span>
-          <input type="text" name="contact" placeholder="Phone or email — for invitation delivery">
-        </label>
-
-        <div class="rsvp-field rsvp-field--full rsvp-photo">
-          <span class="rsvp-label">Capitol portrait (optional)</span>
-
-          <div class="rsvp-photo__empty" id="photo-empty">
-            <button type="button" class="key key--small is-ready" id="photo-add-btn">Open camera</button>
-            <span class="rsvp-photo__hint">Or skip — your initials will be used</span>
-          </div>
-
-          <div class="rsvp-photo__filled" id="photo-filled" hidden>
-            <img class="rsvp-photo__preview" id="photo-preview" alt="">
-            <div class="rsvp-photo__filled-info">
-              <span class="rsvp-photo__status">Portrait recorded</span>
-              <button type="button" class="rsvp-photo__retake" id="photo-clear-btn">Retake</button>
-            </div>
-          </div>
-
-          <input type="hidden" name="profile_photo" id="profile-photo-input">
+      <!-- SCREEN 1 — intro broadcast -->
+      <div class="screen screen--intro is-active" id="screen-intro">
+        <h1 class="broadcast-heading" id="heading"></h1>
+        <p class="broadcast-subheading" id="subheading"></p>
+        <div class="broadcast-body" id="body"></div>
+        <div class="screen-intro__cta" id="continue-cta">
+          <button type="button" class="key" id="continue-btn">
+            Continue
+            <span class="key__caption">begin registration</span>
+          </button>
         </div>
+      </div>
 
-        <div id="companion-fields" class="rsvp-companions" hidden></div>
+      <!-- SCREEN 2 — registration form -->
+      <div class="screen screen--form" id="screen-form" hidden>
+        <h1 class="screen-form__title">Citizen Registration</h1>
+        <p class="screen-form__subtitle">All fields recorded by the Capitol</p>
 
-        <p class="rsvp-fineprint">All declarations are recorded. Failure to respond constitutes treason.</p>
-      </form>
+        <form class="rsvp-form is-ready" id="rsvp-form">
+          <label class="rsvp-field">
+            <span class="rsvp-label">Citizen name</span>
+            <input type="text" name="name" required autocomplete="name" placeholder="As recorded by the Capitol">
+          </label>
 
-      <div class="rsvp-confirmation" id="confirmation" hidden>
+          <label class="rsvp-field">
+            <span class="rsvp-label">Traveling companions</span>
+            <select name="companion_count" id="companion-count">
+              <option value="0">0 — I travel alone</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+
+          <fieldset class="rsvp-field rsvp-field--choice">
+            <legend class="rsvp-label">Declaration of attendance</legend>
+            <div class="rsvp-radios">
+              <label class="rsvp-radio">
+                <input type="radio" name="attending" value="yes" required>
+                <span>I will attend the reaping</span>
+              </label>
+              <label class="rsvp-radio">
+                <input type="radio" name="attending" value="no">
+                <span>I decline. Long live Panem.</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <label class="rsvp-field rsvp-field--full">
+            <span class="rsvp-label">Address of record (optional)</span>
+            <input type="text" name="contact" placeholder="Phone or email — for invitation delivery">
+          </label>
+
+          <div class="rsvp-field rsvp-field--full rsvp-photo">
+            <span class="rsvp-label">Capitol portrait (optional)</span>
+
+            <div class="rsvp-photo__empty" id="photo-empty">
+              <button type="button" class="key key--small is-ready" id="photo-add-btn">Open camera</button>
+              <span class="rsvp-photo__hint">Or skip — your initials will be used</span>
+            </div>
+
+            <div class="rsvp-photo__filled" id="photo-filled" hidden>
+              <img class="rsvp-photo__preview" id="photo-preview" alt="">
+              <div class="rsvp-photo__filled-info">
+                <span class="rsvp-photo__status">Portrait recorded</span>
+                <button type="button" class="rsvp-photo__retake" id="photo-clear-btn">Retake</button>
+              </div>
+            </div>
+
+            <input type="hidden" name="profile_photo" id="profile-photo-input">
+          </div>
+
+          <div id="companion-fields" class="rsvp-companions" hidden></div>
+
+          <p class="rsvp-fineprint">All declarations are recorded. Failure to respond constitutes treason.</p>
+        </form>
+      </div>
+
+      <!-- SCREEN 3 — confirmation -->
+      <div class="screen screen--done" id="screen-done" hidden>
         <h2 class="broadcast-heading">Transmission Received</h2>
-        <p class="broadcast-signoff">
+        <p class="broadcast-signoff" style="margin-top:var(--sp-5);">
           The Capitol thanks you for your compliance.<br>
           Your reaping notice will arrive in due course.
         </p>
@@ -191,29 +207,40 @@
       const body = document.getElementById("body");
 
       await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
-        speed: 95, jitter: 30, ding: false, clicks: false, onDone: r
+        speed: 55, jitter: 22, ding: false, clicks: false, onDone: r
       }));
-      await wait(500);
+      await wait(300);
 
       await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  CITIZEN CENSUS", {
-        speed: 60, jitter: 25, ding: false, clicks: false, onDone: r
+        speed: 35, jitter: 18, ding: false, clicks: false, onDone: r
       }));
-      await wait(700);
+      await wait(400);
 
       const proclamation = `All citizens of Panem are required to declare their attendance at the [d]75th[/d] Annual Reaping, observed Halloween Eve, two-thousand and twenty-six.\n\nKindly disclose the names of any traveling companions, that the Capitol may prepare their reaping notices in advance.`;
 
       await new Promise(r => typeInto(body, proclamation, {
-        speed: 55, jitter: 28, sentencePause: 450, clicks: false, ding: false, onDone: r
+        speed: 30, jitter: 15, sentencePause: 280, clicks: false, ding: false, onDone: r
       }));
 
-      await wait(700);
-      const form = document.getElementById("rsvp-form");
-      form.hidden = false;
-      form.classList.add("is-ready");
+      // Reveal the continue button — user advances to form on click
+      await wait(400);
+      document.getElementById("continue-cta").classList.add("is-ready");
+    }
+
+    // Continue → swap intro screen for form screen, expose the tuner knob
+    document.getElementById("continue-btn").addEventListener("click", async () => {
+      const intro = document.getElementById("screen-intro");
+      const formScreen = document.getElementById("screen-form");
+      intro.classList.remove("is-active");
+      await wait(420);
+      intro.hidden = true;
+      formScreen.hidden = false;
+      // Trigger the fade-in transition on next frame
+      requestAnimationFrame(() => formScreen.classList.add("is-active"));
       const tuner = document.getElementById("tuner");
       tuner.hidden = false;
       validateForm();
-    }
+    });
 
     // ---- Companion fields ---------------------------------------------
     const countSelect = document.getElementById("companion-count");
@@ -379,8 +406,17 @@
         });
         tuner.classList.add("is-locked");
         caption.textContent = "Transmission received";
-        e.target.hidden = true;
-        document.getElementById("confirmation").hidden = false;
+
+        // Swap to confirmation screen
+        const formScreen = document.getElementById("screen-form");
+        const doneScreen = document.getElementById("screen-done");
+        formScreen.classList.remove("is-active");
+        await wait(420);
+        formScreen.hidden = true;
+        doneScreen.hidden = false;
+        requestAnimationFrame(() => doneScreen.classList.add("is-active"));
+        // Hide the tuner once we're on the confirmation screen
+        tuner.hidden = true;
       } catch (err) {
         console.error("RSVP submission failed:", err);
         tuner.classList.remove("is-active");
