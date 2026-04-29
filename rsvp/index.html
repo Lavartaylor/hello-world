@@ -80,9 +80,27 @@
           <input type="text" name="contact" placeholder="Phone or email — for invitation delivery">
         </label>
 
+        <div class="rsvp-field rsvp-field--full rsvp-photo">
+          <span class="rsvp-label">Capitol portrait (optional)</span>
+          <div class="rsvp-photo-row">
+            <button type="button" class="key key--small is-ready" id="photo-add-btn">Open camera</button>
+            <img class="rsvp-photo-preview" id="photo-preview" hidden alt="Portrait preview">
+            <span class="rsvp-photo-status" id="photo-status">No portrait — initials will be used</span>
+            <button type="button" class="key-link" id="photo-clear-btn" hidden>Remove</button>
+          </div>
+          <input type="hidden" name="profile_photo" id="profile-photo-input">
+        </div>
+
         <div id="companion-fields" class="rsvp-companions" hidden></div>
 
         <p class="rsvp-fineprint">All declarations are recorded. Failure to respond constitutes treason.</p>
+
+        <div class="key-row" style="grid-column: 1 / -1;">
+          <button type="submit" class="key" id="submit-key">
+            Transmit to Capitol
+            <span class="key__caption">press to confirm declaration</span>
+          </button>
+        </div>
       </form>
 
       <div class="rsvp-confirmation" id="confirmation" hidden>
@@ -102,12 +120,25 @@
     </footer>
   </div>
 
-  <!-- Keyboard input — Transmit button -->
-  <div class="keyboard-bar">
-    <button class="key" id="submit-key" type="submit" form="rsvp-form" hidden>
-      Transmit to Capitol
-      <span class="key__caption">press to confirm declaration</span>
-    </button>
+  <!-- Webcam capture modal -->
+  <div class="webcam-modal" id="webcam-modal" hidden>
+    <div class="webcam-modal__inner">
+      <div class="webcam-modal__title">
+        Capitol Portrait Capture
+        <small>Submit a likeness for the Gamemakers' records</small>
+      </div>
+      <div class="webcam-modal__stage" id="webcam-stage">
+        <video class="webcam-modal__video" id="webcam-video" autoplay playsinline muted></video>
+        <canvas class="webcam-modal__canvas" id="webcam-canvas" hidden></canvas>
+      </div>
+      <div class="webcam-modal__error" id="webcam-error" hidden></div>
+      <div class="webcam-modal__controls">
+        <button type="button" class="key key--small" id="webcam-cancel">Cancel</button>
+        <button type="button" class="key key--small" id="webcam-capture">Capture</button>
+        <button type="button" class="key key--small" id="webcam-retake" hidden>Retake</button>
+        <button type="button" class="key key--small" id="webcam-use" hidden>Use this portrait</button>
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -118,7 +149,6 @@
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     async function run() {
-      // Tap-to-receive gate (browser audio policy + dramatic intro)
       const startBtn = document.createElement("div");
       startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
       startBtn.textContent = "▸ tap to receive transmission";
@@ -157,16 +187,13 @@
         speed: 55, jitter: 28, sentencePause: 450, clicks: false, ding: false, onDone: r
       }));
 
-      await wait(800);
+      await wait(700);
       const form = document.getElementById("rsvp-form");
       form.hidden = false;
       form.classList.add("is-ready");
-      const submitKey = document.getElementById("submit-key");
-      submitKey.hidden = false;
-      submitKey.classList.add("is-ready");
     }
 
-    // Companion field generation
+    // ---- Companion fields ---------------------------------------------
     const countSelect = document.getElementById("companion-count");
     const companionsWrap = document.getElementById("companion-fields");
     countSelect.addEventListener("change", () => {
@@ -184,7 +211,105 @@
       }
     });
 
-    // Form submission — write to Supabase, keep localStorage as a backup
+    // ---- Webcam capture -----------------------------------------------
+    const modal = document.getElementById("webcam-modal");
+    const video = document.getElementById("webcam-video");
+    const canvas = document.getElementById("webcam-canvas");
+    const errEl = document.getElementById("webcam-error");
+    const btnCapture = document.getElementById("webcam-capture");
+    const btnRetake = document.getElementById("webcam-retake");
+    const btnUse = document.getElementById("webcam-use");
+    const btnCancel = document.getElementById("webcam-cancel");
+    const photoPreview = document.getElementById("photo-preview");
+    const photoStatus = document.getElementById("photo-status");
+    const photoInput = document.getElementById("profile-photo-input");
+    const photoClearBtn = document.getElementById("photo-clear-btn");
+    let mediaStream = null;
+
+    function setError(msg) {
+      errEl.textContent = msg;
+      errEl.hidden = !msg;
+    }
+
+    async function openCamera() {
+      modal.hidden = false;
+      setError("");
+      video.hidden = false;
+      canvas.hidden = true;
+      btnCapture.hidden = false;
+      btnRetake.hidden = true;
+      btnUse.hidden = true;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 720 }, height: { ideal: 540 }, facingMode: "user" },
+          audio: false
+        });
+        video.srcObject = mediaStream;
+      } catch (err) {
+        console.error(err);
+        setError(err.name === "NotAllowedError"
+          ? "Camera permission denied. Capitol cannot record portrait."
+          : "No camera detected on this terminal.");
+      }
+    }
+
+    function closeCamera() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+      video.srcObject = null;
+      modal.hidden = true;
+    }
+
+    document.getElementById("photo-add-btn").addEventListener("click", openCamera);
+    btnCancel.addEventListener("click", closeCamera);
+
+    btnCapture.addEventListener("click", () => {
+      const w = video.videoWidth || 720;
+      const h = video.videoHeight || 540;
+      // Square crop centered for clean portrait
+      const size = Math.min(w, h);
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, (w - size) / 2, (h - size) / 2, size, size, 0, 0, size, size);
+      video.hidden = true;
+      canvas.hidden = false;
+      btnCapture.hidden = true;
+      btnRetake.hidden = false;
+      btnUse.hidden = false;
+    });
+
+    btnRetake.addEventListener("click", () => {
+      video.hidden = false;
+      canvas.hidden = true;
+      btnCapture.hidden = false;
+      btnRetake.hidden = true;
+      btnUse.hidden = true;
+    });
+
+    btnUse.addEventListener("click", () => {
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+      photoInput.value = dataUrl;
+      photoPreview.src = dataUrl;
+      photoPreview.hidden = false;
+      photoStatus.textContent = "Portrait recorded";
+      photoStatus.style.color = "#86e870";
+      photoClearBtn.hidden = false;
+      closeCamera();
+    });
+
+    photoClearBtn.addEventListener("click", () => {
+      photoInput.value = "";
+      photoPreview.hidden = true;
+      photoPreview.src = "";
+      photoStatus.textContent = "No portrait — initials will be used";
+      photoStatus.style.color = "";
+      photoClearBtn.hidden = true;
+    });
+
+    // ---- Form submit --------------------------------------------------
     document.getElementById("rsvp-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
@@ -195,7 +320,6 @@
         if (data["companion_" + i]) companion_names.push(data["companion_" + i]);
       }
 
-      // Local backup (in case Supabase is unreachable)
       try {
         const log = JSON.parse(localStorage.getItem("capitol_rsvp_log") || "[]");
         log.push({ ...data, companion_names, _at: new Date().toISOString() });
@@ -204,6 +328,7 @@
 
       const submitKey = document.getElementById("submit-key");
       submitKey.disabled = true;
+      submitKey.querySelector(".key__caption").textContent = "transmitting…";
 
       try {
         await submitRsvp({
@@ -211,15 +336,15 @@
           attending: data.attending,
           companion_count: cc,
           companion_names,
-          contact: data.contact || null
+          contact: data.contact || null,
+          profile_photo: data.profile_photo || null
         });
         e.target.hidden = true;
-        submitKey.hidden = true;
         document.getElementById("confirmation").hidden = false;
       } catch (err) {
         console.error("RSVP submission failed:", err);
         submitKey.disabled = false;
-        alert("Transmission failed — the Capitol terminal is unreachable. Please try again.");
+        submitKey.querySelector(".key__caption").textContent = "transmission failed — try again";
       }
     });
 

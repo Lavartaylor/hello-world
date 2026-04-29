@@ -662,10 +662,155 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   font-weight: 500;
   font-size: 0.7rem;
   text-transform: uppercase;
-  color: rgba(240, 232, 212, 0.45);
+  color: rgba(240, 232, 212, 0.55);
   letter-spacing: 0;
   white-space: nowrap;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Smaller variant of .key for inline buttons (camera open, retake, etc.) */
+.key--small {
+  padding: 10px 22px;
+  font-size: 0.85rem;
+  border-radius: 5px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 3px 0 #0a0908,
+    0 5px 10px rgba(0, 0, 0, 0.5);
+}
+.key--small:active,
+.key--small:focus-visible {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 1px 0 #0a0908,
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Inline submit (used on RSVP — keyboard key inside the form, not in the bottom bar) */
+.key-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-5);
+  margin-top: var(--sp-5);
+  flex-wrap: wrap;
+}
+
+/* Profile photo row inside the RSVP form */
+.rsvp-photo-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+.rsvp-photo-status {
+  font-family: var(--font-utility);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #ffd870;
+  letter-spacing: 0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+}
+.rsvp-photo-preview {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border: 2px solid #ffd870;
+  box-shadow: 0 0 12px rgba(255, 216, 112, 0.4);
+}
+.key-link {
+  background: none;
+  border: 0;
+  font-family: var(--font-utility);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ff7070;
+  cursor: pointer;
+  padding: 4px 8px;
+  letter-spacing: 0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+}
+.key-link:hover { color: #ff5050; }
+
+/* ========================================================
+   Webcam modal — Capitol Portrait capture
+   ======================================================== */
+.webcam-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(3px);
+  padding: var(--sp-5);
+}
+.webcam-modal[hidden] { display: none; }
+.webcam-modal__inner {
+  position: relative;
+  width: min(560px, 100%);
+  background: linear-gradient(180deg, #1a1612 0%, #0d0b08 100%);
+  border: 2px solid #ffd870;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 40px rgba(255, 216, 112, 0.18);
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.webcam-modal__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  color: #ffe4a0;
+  letter-spacing: 0;
+  text-align: center;
+}
+.webcam-modal__title small {
+  display: block;
+  font-family: var(--font-utility);
+  font-weight: 500;
+  font-size: 0.7rem;
+  color: #ad8a40;
+  margin-top: 4px;
+  letter-spacing: 0;
+}
+.webcam-modal__stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  border: 1px solid rgba(255, 216, 112, 0.35);
+  overflow: hidden;
+}
+.webcam-modal__video,
+.webcam-modal__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.webcam-modal__error {
+  font-family: var(--font-utility);
+  font-size: 0.8rem;
+  color: #ff8080;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+}
+.webcam-modal__controls {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 /* Footer marquee — Capitol propaganda ticker */
@@ -739,11 +884,15 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 
 .rsvp-label {
   font-family: var(--font-utility);
-  font-size: var(--fs-xs);
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0;
-  color: #ad8a40;
+  color: #ffe4a0;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.55),
+    0 0 12px rgba(255, 200, 100, 0.18);
 }
 
 .rsvp-form input[type="text"],
@@ -836,13 +985,16 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 
 .rsvp-fineprint {
   font-family: var(--font-utility);
-  font-size: var(--fs-xs);
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0;
-  color: #ad8a40;
+  color: #ffd870;
   text-align: center;
   margin-top: var(--sp-3);
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.55);
 }
 
 .rsvp-confirmation {

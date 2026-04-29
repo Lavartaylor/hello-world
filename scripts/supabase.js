@@ -40,13 +40,14 @@ export async function fetchTribute(slug) {
 
 // --- RSVPs ----------------------------------------------------------
 
-export async function submitRsvp({ name, attending, companion_count, companion_names, contact }) {
+export async function submitRsvp({ name, attending, companion_count, companion_names, contact, profile_photo }) {
   const payload = {
     name,
     attending,
     companion_count: parseInt(companion_count || 0, 10),
     companion_names: (companion_names || []).filter(Boolean),
-    contact: contact || null
+    contact: contact || null,
+    profile_photo: profile_photo || null
   };
   const { data, error } = await supabase
     .from("hg_rsvps")
