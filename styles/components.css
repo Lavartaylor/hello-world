@@ -53,6 +53,17 @@ body::before {
   text-transform: uppercase;
   font-weight: 500;
 }
+.gate__seal {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto var(--sp-6);
+  color: var(--accent);
+  opacity: 0.9;
+}
+.gate__seal svg {
+  width: 100%;
+  height: 100%;
+}
 .gate__inner strong {
   display: block;
   font-family: var(--font-display);
@@ -190,17 +201,6 @@ body::before {
   font-style: italic;
   text-align: right;
   color: #3a2510;
-}
-
-.artifact__stamp {
-  position: absolute;
-  bottom: var(--sp-5);
-  left: var(--sp-5);
-  width: 96px;
-  height: 96px;
-  opacity: 0.85;
-  transform: rotate(-12deg);
-  mix-blend-mode: multiply;
 }
 
 /* Continue button */

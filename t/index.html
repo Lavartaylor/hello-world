@@ -14,19 +14,20 @@
 </head>
 <body data-role="tribute">
 
-  <!-- Tap-to-begin gate (also unlocks audio) -->
+  <!-- Tap-to-begin gate (the sealed envelope from the Capitol) -->
   <div class="gate" id="gate" role="button" tabindex="0" aria-label="Begin">
     <div class="gate__inner">
+      <div class="gate__seal" id="gate-seal"></div>
       <strong>Panem Capitol Broadcast</strong>
-      Personal terminal access required
-      <div class="gate__pulse">— tap anywhere to receive transmission —</div>
+      Sealed correspondence — for citizen eyes only
+      <div class="gate__pulse">— tap anywhere to break the seal —</div>
     </div>
   </div>
 
   <main class="stage">
     <article class="artifact" id="artifact" hidden>
       <div class="artifact__seal" id="seal-slot">
-        <!-- Capitol seal injected here at runtime -->
+        <!-- District seal injected here at runtime — identifies the recipient -->
       </div>
       <h1 class="artifact__heading" id="heading"></h1>
       <p class="artifact__subheading" id="subheading"></p>
@@ -42,7 +43,6 @@
       <div style="text-align:center">
         <button class="continue" id="continue" type="button">Acknowledge ▸</button>
       </div>
-      <div class="artifact__stamp" id="stamp-slot"></div>
     </article>
 
     <!-- Lost-tribute fallback -->
@@ -99,6 +99,9 @@
       // Apply role-based theme on body
       document.body.dataset.role = tribute.role || "tribute";
 
+      // Cover (gate) shows the Capitol seal — letter is sealed by the sender
+      injectSVG(document.getElementById("gate-seal"), CAPITOL_SEAL_URL);
+
       // Wait for the gate tap to start the show
       const gate = document.getElementById("gate");
       const begin = () => {
@@ -115,10 +118,9 @@
     }
 
     async function startSequence(tribute, data) {
-      // Inject seals
-      await injectSVG(document.getElementById("seal-slot"), CAPITOL_SEAL_URL);
-      const stampUrl = DISTRICT_SEAL_URL(tribute.district);
-      injectSVG(document.getElementById("stamp-slot"), stampUrl); // fire and forget
+      // Inside the opened letter — recipient's District seal at the top
+      const districtSealUrl = DISTRICT_SEAL_URL(tribute.district);
+      await injectSVG(document.getElementById("seal-slot"), districtSealUrl);
 
       const heading = document.getElementById("heading");
       const subheading = document.getElementById("subheading");
