@@ -1,0 +1,76 @@
+/* Design tokens — Halloween 2026 Hunger Games */
+
+:root {
+  /* Type stack */
+  --font-display: "Big Shoulders Display", "Bank Gothic", "Helvetica Neue", sans-serif;
+  --font-typewriter: "Special Elite", "Courier New", monospace;
+  --font-artifact: "IM Fell English", "Garamond", serif;
+  --font-utility: "Barlow Condensed", "Helvetica Neue", sans-serif;
+
+  /* Type scale — generous, monumental */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.25rem;
+  --fs-lg: 1.75rem;
+  --fs-xl: 2.5rem;
+  --fs-2xl: 4rem;
+  --fs-3xl: 6.5rem;
+  --fs-4xl: 10rem;
+
+  /* Spacing — 8pt rhythm */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+  --sp-9: 6rem;
+  --sp-10: 8rem;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --dur-fast: 180ms;
+  --dur-med: 420ms;
+  --dur-slow: 900ms;
+}
+
+/* Capitol palette — gold, cream, oxblood, monumental */
+[data-role="capitol"] {
+  --bg: #0c0a08;
+  --bg-elevated: #16110b;
+  --ink: #f6efd9;
+  --ink-soft: #c8b98a;
+  --accent: #d4af37;     /* gold leaf */
+  --accent-hot: #f3c948; /* polished gold */
+  --blood: #7a1010;      /* oxblood */
+  --paper: #efe5c5;      /* aged cream */
+}
+
+/* District palette — kraft, charcoal, blood-red stamp */
+[data-role="tribute"],
+[data-role="district"] {
+  --bg: #0a0a0a;
+  --bg-elevated: #141312;
+  --ink: #e8e4d8;
+  --ink-soft: #8a8478;
+  --accent: #b8a378;     /* faded brass */
+  --accent-hot: #d6c08b;
+  --blood: #8a1414;      /* district seal red */
+  --paper: #d9cfb6;      /* kraft */
+}
+
+/* Default to district until role declared */
+:root {
+  --bg: #0a0a0a;
+  --bg-elevated: #141312;
+  --ink: #e8e4d8;
+  --ink-soft: #8a8478;
+  --accent: #b8a378;
+  --accent-hot: #d6c08b;
+  --blood: #8a1414;
+  --paper: #d9cfb6;
+}

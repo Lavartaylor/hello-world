@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Reaping Notice — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="../styles/reset.css">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body data-role="tribute">
+
+  <!-- Tap-to-begin gate (also unlocks audio) -->
+  <div class="gate" id="gate" role="button" tabindex="0" aria-label="Begin">
+    <div class="gate__inner">
+      <strong>Panem Capitol Broadcast</strong>
+      Personal terminal access required
+      <div class="gate__pulse">— tap anywhere to receive transmission —</div>
+    </div>
+  </div>
+
+  <main class="stage">
+    <article class="artifact" id="artifact" hidden>
+      <div class="artifact__seal" id="seal-slot">
+        <!-- Capitol seal injected here at runtime -->
+      </div>
+      <h1 class="artifact__heading" id="heading"></h1>
+      <p class="artifact__subheading" id="subheading"></p>
+      <div class="artifact__body" id="body"></div>
+      <div id="reveal-slot" hidden>
+        <span class="artifact__name" id="name-line"></span>
+        <span class="artifact__district" id="district-line">
+          <small>OF DISTRICT</small>
+          <span id="district-num"></span>
+        </span>
+        <div class="artifact__signoff" id="signoff"></div>
+      </div>
+      <div style="text-align:center">
+        <button class="continue" id="continue" type="button">Acknowledge ▸</button>
+      </div>
+      <div class="artifact__stamp" id="stamp-slot"></div>
+    </article>
+
+    <!-- Lost-tribute fallback -->
+    <article class="artifact" id="not-found" hidden>
+      <h1 class="artifact__heading">Unrecognized Identifier</h1>
+      <p class="artifact__subheading">This terminal does not match Capitol records.</p>
+      <div class="artifact__body" style="text-align:center">
+        <p>If you believe this is an error, present yourself to the Gamemakers.</p>
+      </div>
+    </article>
+  </main>
+
+  <script type="module">
+    import { typeInto } from "../scripts/typewriter.js";
+    import { unlockAudio, dingBell } from "../scripts/audio.js";
+    import { jitterChars, jitterEls } from "../scripts/jitter.js";
+    import { loadTributes, getSlug, findTribute, districtName } from "../scripts/data.js";
+
+    const CAPITOL_SEAL_URL = "../assets/seals/capitol.svg";
+    const DISTRICT_SEAL_URL = (n) => `../assets/seals/district-${n}.svg`;
+
+    async function fetchInlineSVG(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const text = await res.text();
+        return text;
+      } catch { return null; }
+    }
+
+    async function injectSVG(target, url) {
+      const svg = await fetchInlineSVG(url);
+      if (svg) target.innerHTML = svg;
+    }
+
+    function ordinal(n) {
+      const s = ["th","st","nd","rd"], v = n % 100;
+      return n + (s[(v-20)%10] || s[v] || s[0]);
+    }
+
+    async function run() {
+      const data = await loadTributes();
+      const slug = getSlug();
+      const tribute = findTribute(data, slug);
+      const artifactEl = document.getElementById("artifact");
+      const notFoundEl = document.getElementById("not-found");
+
+      if (!tribute) {
+        document.getElementById("gate").remove();
+        notFoundEl.hidden = false;
+        return;
+      }
+
+      // Apply role-based theme on body
+      document.body.dataset.role = tribute.role || "tribute";
+
+      // Wait for the gate tap to start the show
+      const gate = document.getElementById("gate");
+      const begin = () => {
+        unlockAudio();
+        gate.classList.add("dismissing");
+        setTimeout(() => gate.remove(), 900);
+        artifactEl.hidden = false;
+        startSequence(tribute, data);
+      };
+      gate.addEventListener("click", begin, { once: true });
+      gate.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") begin();
+      }, { once: true });
+    }
+
+    async function startSequence(tribute, data) {
+      // Inject seals
+      await injectSVG(document.getElementById("seal-slot"), CAPITOL_SEAL_URL);
+      const stampUrl = DISTRICT_SEAL_URL(tribute.district);
+      injectSVG(document.getElementById("stamp-slot"), stampUrl); // fire and forget
+
+      const heading = document.getElementById("heading");
+      const subheading = document.getElementById("subheading");
+      const body = document.getElementById("body");
+      const reveal = document.getElementById("reveal-slot");
+      const nameLine = document.getElementById("name-line");
+      const districtNum = document.getElementById("district-num");
+      const signoff = document.getElementById("signoff");
+      const cont = document.getElementById("continue");
+
+      const dn = districtName(data, tribute.district);
+      const districtLabel = `District ${tribute.district} — ${dn}`;
+
+      // 1. Heading types in
+      await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
+        speed: 50, jitter: 18, ding: false, onDone: r
+      }));
+      dingBell();
+      await wait(400);
+
+      // 2. Subheading
+      await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  REAPING NOTICE", {
+        speed: 26, jitter: 14, ding: false, onDone: r
+      }));
+      await wait(700);
+
+      // 3. Body — the proclamation
+      const body1 = `By edict of the Gamemakers, and in accordance with the Treaty of the Treason, the following citizen has been selected to represent their district in the [d]${ordinal(75)}[/d] Annual Hunger Games:`;
+      await new Promise(r => typeInto(body, body1, {
+        speed: 22, jitter: 16, sentencePause: 320, onDone: r
+      }));
+      await wait(900);
+
+      // 4. Name reveal — dramatic
+      reveal.hidden = false;
+      nameLine.textContent = "";
+      await new Promise(r => typeInto(nameLine, tribute.name.toUpperCase(), {
+        speed: 110, jitter: 40, sentencePause: 0, onDone: r
+      }));
+      // Apply hand-jitter to the typed name letters
+      jitterChars(nameLine, { maxRot: 4, maxShift: 1.8, maxScale: 0.05 });
+      dingBell();
+      await wait(700);
+
+      // 5. District reveal
+      districtNum.textContent = String(tribute.district);
+      jitterChars(districtNum, { maxRot: 5, maxShift: 2.5, maxScale: 0.08 });
+      await wait(600);
+
+      // 6. Sign-off
+      const sig = `\nMay the odds be ever in your favor.\n— The Gamemakers`;
+      await new Promise(r => typeInto(signoff, sig, {
+        speed: 30, jitter: 14, ding: false, onDone: r
+      }));
+
+      // 7. Continue button
+      await wait(400);
+      cont.classList.add("is-ready");
+      cont.addEventListener("click", () => {
+        // Stub for now — next page is the tribute home, not built yet.
+        cont.disabled = true;
+        cont.textContent = "Standing by…";
+      });
+    }
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    run().catch(err => {
+      console.error(err);
+      document.getElementById("gate").remove();
+      document.getElementById("not-found").hidden = false;
+    });
+  </script>
+</body>
+</html>

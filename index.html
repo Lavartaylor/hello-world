@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Panem — Capitol Broadcast Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="styles/reset.css">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <style>
+    .holding {
+      width: min(640px, 100%);
+      text-align: center;
+      color: var(--ink);
+    }
+    .holding__seal {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto var(--sp-6);
+      color: var(--accent);
+      opacity: 0.85;
+    }
+    .holding__title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: var(--fs-2xl);
+      line-height: 0.95;
+      letter-spacing: 0;
+      color: var(--ink);
+      margin-bottom: var(--sp-3);
+    }
+    .holding__lede {
+      font-family: var(--font-typewriter);
+      font-size: var(--fs-md);
+      color: var(--ink-soft);
+      max-width: 38ch;
+      margin: 0 auto var(--sp-6);
+      line-height: 1.6;
+    }
+    .holding__small {
+      font-family: var(--font-utility);
+      font-size: var(--fs-xs);
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body data-role="capitol">
+  <main class="stage">
+    <div class="holding">
+      <div class="holding__seal" id="seal"></div>
+      <h1 class="holding__title">Capitol Broadcast Network</h1>
+      <p class="holding__lede">This terminal is restricted to citizens of Panem with valid credentials. Personal access tokens have been distributed to selected tributes and patrons.</p>
+      <p class="holding__small">Unauthorized access will be reported to the Peacekeepers.</p>
+    </div>
+  </main>
+  <script>
+    fetch("assets/seals/capitol.svg")
+      .then(r => r.text())
+      .then(svg => { document.getElementById("seal").innerHTML = svg; });
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "districts": {
+    "1": "Luxury",
+    "2": "Masonry",
+    "3": "Technology",
+    "4": "Fishing",
+    "5": "Power",
+    "6": "Transportation",
+    "7": "Lumber",
+    "8": "Textiles",
+    "9": "Grain",
+    "10": "Livestock",
+    "11": "Agriculture",
+    "12": "Mining"
+  },
+  "tributes": [
+    {
+      "slug": "lavar",
+      "name": "LaVar Taylor",
+      "district": 12,
+      "role": "tribute",
+      "trainingScore": null,
+      "points": 0
+    },
+    {
+      "slug": "rachel",
+      "name": "Rachel",
+      "district": 1,
+      "role": "tribute",
+      "trainingScore": null,
+      "points": 0
+    },
+    {
+      "slug": "demo",
+      "name": "Marigold Vance",
+      "district": 7,
+      "role": "tribute",
+      "trainingScore": null,
+      "points": 0
+    }
+  ]
+}

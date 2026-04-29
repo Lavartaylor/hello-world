@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Outer ring -->
+  <circle cx="100" cy="100" r="92" stroke-width="3"/>
+  <circle cx="100" cy="100" r="86"/>
+  <!-- Barley laurel -->
+  <g stroke-width="1.6">
+    <path d="M30 100 Q 40 60 100 30"/>
+    <path d="M170 100 Q 160 60 100 30"/>
+    <path d="M30 100 Q 40 140 100 170"/>
+    <path d="M170 100 Q 160 140 100 170"/>
+    <!-- Barley fronds, left -->
+    <g>
+      <path d="M44 80 l -5 -3"/><path d="M44 80 l -5 3"/>
+      <path d="M52 68 l -5 -3"/><path d="M52 68 l -5 3"/>
+      <path d="M64 56 l -5 -3"/><path d="M64 56 l -5 3"/>
+      <path d="M78 46 l -5 -3"/><path d="M78 46 l -5 3"/>
+      <path d="M44 120 l -5 3"/><path d="M44 120 l -5 -3"/>
+      <path d="M52 132 l -5 3"/><path d="M52 132 l -5 -3"/>
+      <path d="M64 144 l -5 3"/><path d="M64 144 l -5 -3"/>
+      <path d="M78 154 l -5 3"/><path d="M78 154 l -5 -3"/>
+    </g>
+    <g>
+      <path d="M156 80 l 5 -3"/><path d="M156 80 l 5 3"/>
+      <path d="M148 68 l 5 -3"/><path d="M148 68 l 5 3"/>
+      <path d="M136 56 l 5 -3"/><path d="M136 56 l 5 3"/>
+      <path d="M122 46 l 5 -3"/><path d="M122 46 l 5 3"/>
+      <path d="M156 120 l 5 3"/><path d="M156 120 l 5 -3"/>
+      <path d="M148 132 l 5 3"/><path d="M148 132 l 5 -3"/>
+      <path d="M136 144 l 5 3"/><path d="M136 144 l 5 -3"/>
+      <path d="M122 154 l 5 3"/><path d="M122 154 l 5 -3"/>
+    </g>
+  </g>
+  <!-- Eagle, stylized: head, body, spread wings -->
+  <g stroke-width="2.4" fill="currentColor" fill-opacity="0.05">
+    <!-- Body -->
+    <path d="M100 70 L 92 90 L 95 130 L 100 138 L 105 130 L 108 90 Z"/>
+    <!-- Head -->
+    <circle cx="100" cy="68" r="8" fill="currentColor" fill-opacity="0.15"/>
+    <path d="M105 66 L 114 64"/> <!-- beak -->
+    <!-- Left wing -->
+    <path d="M92 90 L 60 85 L 50 95 L 64 100 L 56 110 L 70 110 L 64 122 L 80 118 L 88 130 Z"/>
+    <!-- Right wing -->
+    <path d="M108 90 L 140 85 L 150 95 L 136 100 L 144 110 L 130 110 L 136 122 L 120 118 L 112 130 Z"/>
+    <!-- Tail -->
+    <path d="M95 130 L 90 150 L 100 144 L 110 150 L 105 130"/>
+  </g>
+  <!-- Four arrows in talons -->
+  <g stroke-width="1.8">
+    <!-- Left bundle -->
+    <path d="M88 138 L 70 158"/>
+    <path d="M93 140 L 78 162"/>
+    <!-- arrow heads -->
+    <path d="M70 158 L 66 152 M70 158 L 76 156"/>
+    <path d="M78 162 L 74 156 M78 162 L 84 160"/>
+    <!-- Right bundle -->
+    <path d="M112 138 L 130 158"/>
+    <path d="M107 140 L 122 162"/>
+    <path d="M130 158 L 134 152 M130 158 L 124 156"/>
+    <path d="M122 162 L 126 156 M122 162 L 116 160"/>
+  </g>
+</svg>
