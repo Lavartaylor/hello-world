@@ -11,23 +11,43 @@
   <link rel="stylesheet" href="/styles/reset.css">
   <link rel="stylesheet" href="/styles/tokens.css">
   <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    /* RSVP page lets content breathe vertically — body height instead of fixed viewport */
+    body.broadcast { overflow-y: auto; height: auto; min-height: 100vh; }
+    .broadcast-layout { height: auto; min-height: 100vh; }
+    .broadcast-main { padding: var(--sp-7) 0; }
+  </style>
 </head>
-<body data-role="capitol">
+<body class="broadcast" data-role="capitol">
 
-  <div class="gate" id="gate" role="button" tabindex="0" aria-label="Begin">
-    <div class="gate__inner">
-      <strong>Panem Capitol Broadcast</strong>
-      Census terminal — registration required
-      <div class="gate__pulse">— tap anywhere to receive transmission —</div>
-    </div>
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
   </div>
 
-  <main class="stage">
-    <article class="artifact" id="artifact" hidden>
-      <div class="artifact__seal" id="seal-slot"></div>
-      <h1 class="artifact__heading" id="heading"></h1>
-      <p class="artifact__subheading" id="subheading"></p>
-      <div class="artifact__body" id="body"></div>
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
+      <div class="broadcast-hud">
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value">UNREGISTERED</span>
+        </div>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Status</span>
+          <span class="broadcast-hud__value" style="color:#ff6060;">PENDING</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <h1 class="broadcast-heading" id="heading"></h1>
+      <p class="broadcast-subheading" id="subheading"></p>
+      <div class="broadcast-body" id="body"></div>
 
       <form class="rsvp-form" id="rsvp-form" hidden>
         <label class="rsvp-field">
@@ -47,7 +67,7 @@
           </label>
         </fieldset>
 
-        <label class="rsvp-field" id="companion-count-field">
+        <label class="rsvp-field">
           <span class="rsvp-label">Traveling companions</span>
           <select name="companion_count" id="companion-count">
             <option value="0">0 — I travel alone</option>
@@ -66,86 +86,87 @@
           <input type="text" name="contact" placeholder="Phone or email — for invitation delivery">
         </label>
 
-        <button class="continue is-ready" type="submit">Transmit to Capitol ▸</button>
         <p class="rsvp-fineprint">All declarations are recorded. Failure to respond constitutes treason.</p>
       </form>
 
       <div class="rsvp-confirmation" id="confirmation" hidden>
-        <h2 class="artifact__heading">Transmission Received</h2>
-        <p class="artifact__signoff">
+        <h2 class="broadcast-heading">Transmission Received</h2>
+        <p class="broadcast-signoff">
           The Capitol thanks you for your compliance.<br>
           Your reaping notice will arrive in due course.
         </p>
       </div>
-    </article>
-  </main>
+    </main>
+
+    <footer class="broadcast-footer">
+      <div class="broadcast-marquee">
+        <span>● 75TH ANNUAL HUNGER GAMES — CITIZEN CENSUS — REGISTRATION REQUIRED — LONG LIVE PANEM — MAY THE ODDS BE EVER IN YOUR FAVOR</span>
+        <span>● 75TH ANNUAL HUNGER GAMES — CITIZEN CENSUS — REGISTRATION REQUIRED — LONG LIVE PANEM — MAY THE ODDS BE EVER IN YOUR FAVOR</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Keyboard input — Transmit button -->
+  <div class="keyboard-bar">
+    <button class="key" id="submit-key" type="submit" form="rsvp-form" hidden>
+      Transmit to Capitol
+      <span class="key__caption">press to confirm declaration</span>
+    </button>
+  </div>
 
   <script type="module">
     import { typeInto } from "/scripts/typewriter.js";
-    import { unlockAudio, dingBell } from "/scripts/audio.js";
-    import { jitterChars } from "/scripts/jitter.js";
-
-    const CAPITOL_SEAL_URL = "/assets/seals/capitol.svg";
-
-    async function fetchInlineSVG(url) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        return await res.text();
-      } catch { return null; }
-    }
-
-    async function injectSVG(target, url) {
-      const svg = await fetchInlineSVG(url);
-      if (svg) target.innerHTML = svg;
-    }
+    import { unlockAudio, dingBell, startHiss } from "/scripts/audio.js";
 
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     async function run() {
-      const gate = document.getElementById("gate");
-      const artifact = document.getElementById("artifact");
-      const begin = () => {
+      // Tap-to-receive gate (browser audio policy + dramatic intro)
+      const startBtn = document.createElement("div");
+      startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
+      startBtn.textContent = "▸ tap to receive transmission";
+      document.body.appendChild(startBtn);
+
+      startBtn.addEventListener("click", async () => {
         unlockAudio();
-        gate.classList.add("dismissing");
-        setTimeout(() => gate.remove(), 900);
-        artifact.hidden = false;
-        startSequence();
-      };
-      gate.addEventListener("click", begin, { once: true });
-      gate.addEventListener("keydown", e => {
-        if (e.key === "Enter" || e.key === " ") begin();
+        startHiss();
+        startBtn.style.transition = "opacity 0.4s";
+        startBtn.style.opacity = "0";
+        setTimeout(() => startBtn.remove(), 400);
+        await wait(1300);
+        await runBroadcast();
       }, { once: true });
     }
 
-    async function startSequence() {
-      await injectSVG(document.getElementById("seal-slot"), CAPITOL_SEAL_URL);
-
+    async function runBroadcast() {
       const heading = document.getElementById("heading");
       const subheading = document.getElementById("subheading");
       const body = document.getElementById("body");
 
       await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
-        speed: 95, jitter: 30, ding: false, onDone: r
+        speed: 95, jitter: 30, ding: false, clicks: false, onDone: r
       }));
       dingBell();
       await wait(500);
 
       await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  CITIZEN CENSUS", {
-        speed: 60, jitter: 25, ding: false, onDone: r
+        speed: 60, jitter: 25, ding: false, clicks: false, onDone: r
       }));
       await wait(700);
 
       const proclamation = `All citizens of Panem are required to declare their attendance at the [d]75th[/d] Annual Reaping, observed Halloween Eve, two-thousand and twenty-six.\n\nKindly disclose the names of any traveling companions, that the Capitol may prepare their reaping notices in advance.`;
 
       await new Promise(r => typeInto(body, proclamation, {
-        speed: 55, jitter: 28, sentencePause: 450, onDone: r
+        speed: 55, jitter: 28, sentencePause: 450, clicks: false, ding: false, onDone: r
       }));
 
       await wait(800);
       const form = document.getElementById("rsvp-form");
       form.hidden = false;
       form.classList.add("is-ready");
+      const submitKey = document.getElementById("submit-key");
+      submitKey.hidden = false;
+      submitKey.classList.add("is-ready");
     }
 
     // Companion field generation
@@ -172,14 +193,12 @@
       const fd = new FormData(e.target);
       const data = Object.fromEntries(fd.entries());
 
-      // Backup to localStorage
       try {
         const log = JSON.parse(localStorage.getItem("capitol_rsvp_log") || "[]");
         log.push({ ...data, _at: new Date().toISOString() });
         localStorage.setItem("capitol_rsvp_log", JSON.stringify(log));
       } catch {}
 
-      // Compose mailto body
       const lines = [];
       lines.push(`Citizen: ${data.name || "(no name)"}`);
       lines.push(`Attending: ${data.attending || "(undeclared)"}`);
@@ -196,8 +215,8 @@
       const mailto = `mailto:lavartay11@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
       window.location.href = mailto;
 
-      // Show confirmation regardless of mail client behavior
       e.target.hidden = true;
+      document.getElementById("submit-key").hidden = true;
       document.getElementById("confirmation").hidden = false;
     });
 

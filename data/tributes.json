@@ -20,7 +20,8 @@
       "district": 12,
       "role": "tribute",
       "trainingScore": null,
-      "points": 0
+      "points": 1250,
+      "credits": 0
     },
     {
       "slug": "rachel",
@@ -28,7 +29,8 @@
       "district": 1,
       "role": "tribute",
       "trainingScore": null,
-      "points": 0
+      "points": 2100,
+      "credits": 0
     },
     {
       "slug": "demo",
@@ -36,7 +38,8 @@
       "district": 7,
       "role": "tribute",
       "trainingScore": null,
-      "points": 0
+      "points": 850,
+      "credits": 0
     }
   ]
 }

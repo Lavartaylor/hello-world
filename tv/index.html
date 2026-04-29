@@ -26,7 +26,20 @@
   <div class="broadcast-layout">
     <header class="broadcast-header">
       <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
-      <span class="broadcast-header__rec">LIVE</span>
+      <div class="broadcast-hud" id="hud">
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">District</span>
+          <span class="broadcast-hud__value" id="hud-district">—</span>
+        </div>
+        <div class="broadcast-hud__row broadcast-hud__row--points">
+          <span class="broadcast-hud__label">Points</span>
+          <span class="broadcast-hud__value" id="hud-points">0</span>
+        </div>
+      </div>
     </header>
 
     <main class="broadcast-main">
@@ -94,8 +107,14 @@
         document.getElementById("heading").textContent = "NO SIGNAL";
         document.getElementById("subheading").textContent = "Terminal not recognized";
         document.getElementById("body").textContent = "If you believe this is in error, present yourself to the Gamemakers.";
+        document.getElementById("hud").style.display = "none";
         return;
       }
+
+      // Populate citizen HUD
+      document.getElementById("hud-name").textContent = tribute.name.toUpperCase();
+      document.getElementById("hud-district").textContent = String(tribute.district).padStart(2, "0");
+      document.getElementById("hud-points").textContent = (tribute.points ?? 0).toLocaleString();
 
       // Need a tap to unlock audio (browser policy)
       const startBtn = document.createElement("div");

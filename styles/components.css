@@ -424,16 +424,22 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 .broadcast-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   font-family: var(--font-utility);
   font-size: var(--fs-xs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0;
   color: #e8d49a;
-  opacity: 0.85;
+  gap: var(--sp-5);
 }
-.broadcast-header__channel { display: flex; align-items: center; gap: 0.5rem; }
+.broadcast-header__channel {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  opacity: 0.85;
+  padding-top: 4px;
+}
 .broadcast-header__channel::before {
   content: "CH-01";
   padding: 2px 6px;
@@ -442,23 +448,44 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   font-size: 0.7em;
   letter-spacing: 0;
 }
-.broadcast-header__rec {
+
+/* Citizen HUD — top-right identity + points readout */
+.broadcast-hud {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #f0a0a0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.7);
 }
-.broadcast-header__rec::before {
-  content: "";
-  width: 10px; height: 10px;
-  background: #e84545;
-  border-radius: 50%;
-  box-shadow: 0 0 12px #e84545;
-  animation: rec-pulse 1.4s ease-in-out infinite;
+.broadcast-hud__row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
 }
-@keyframes rec-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.5; transform: scale(0.85); }
+.broadcast-hud__label {
+  font-family: var(--font-utility);
+  font-weight: 500;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: #ad8a40;
+  letter-spacing: 0;
+}
+.broadcast-hud__value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  color: #fff8e0;
+  letter-spacing: 0;
+}
+.broadcast-hud__row--points .broadcast-hud__value {
+  font-size: 1.4rem;
+  color: #ffd870;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 0 12px rgba(255, 216, 112, 0.6);
 }
 
 .broadcast-main {
@@ -664,15 +691,20 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   to   { transform: translateX(-50%); }
 }
 
-/* RSVP form — typed onto the artifact */
+/* ========================================================
+   RSVP form — broadcast styling, sits inside .broadcast-main
+   ======================================================== */
 .rsvp-form {
-  margin-top: var(--sp-7);
+  margin-top: var(--sp-6);
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
+  width: 100%;
+  max-width: 520px;
   opacity: 0;
   transform: translateY(8px);
   transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+  text-align: left;
 }
 .rsvp-form.is-ready {
   opacity: 1;
@@ -693,31 +725,51 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 .rsvp-label {
   font-family: var(--font-utility);
   font-size: var(--fs-xs);
-  font-weight: 500;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0;
-  color: #5a3a18;
+  color: #ad8a40;
 }
 
 .rsvp-form input[type="text"],
 .rsvp-form select {
-  font-family: var(--font-typewriter);
-  font-size: var(--fs-base);
+  font-family: var(--font-utility);
+  font-weight: 600;
+  font-size: 1.05rem;
+  text-transform: uppercase;
   background: transparent;
   border: 0;
-  border-bottom: 1.5px solid #5a3a18;
+  border-bottom: 2px solid rgba(255, 220, 120, 0.35);
   padding: var(--sp-2) 0;
-  color: #1a1208;
+  color: #fff8e0;
   outline: none;
   width: 100%;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 0 12px rgba(255, 220, 120, 0.18);
 }
 .rsvp-form input[type="text"]:focus,
 .rsvp-form select:focus {
-  border-bottom-color: var(--blood);
+  border-bottom-color: #ffd870;
 }
 .rsvp-form input::placeholder {
-  color: rgba(60, 40, 20, 0.4);
+  color: rgba(255, 248, 224, 0.35);
+  text-transform: none;
+  font-weight: 400;
   font-style: italic;
+}
+.rsvp-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><polygon points='0,0 10,0 5,6' fill='%23ffd870'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  padding-right: 22px;
+  cursor: pointer;
+}
+.rsvp-form select option {
+  background: #0a1322;
+  color: #fff8e0;
 }
 
 .rsvp-radio {
@@ -725,9 +777,11 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2) 0;
-  font-family: var(--font-typewriter);
-  font-size: var(--fs-base);
-  color: #1a1208;
+  font-family: var(--font-utility);
+  font-weight: 600;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  color: #fff8e0;
   cursor: pointer;
 }
 .rsvp-radio input[type="radio"] {
@@ -735,19 +789,21 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
-  border: 1.5px solid #3a2510;
+  border: 2px solid rgba(255, 220, 120, 0.5);
   border-radius: 50%;
   display: grid;
   place-items: center;
   cursor: pointer;
   flex-shrink: 0;
+  background: transparent;
 }
 .rsvp-radio input[type="radio"]::after {
   content: "";
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--blood);
+  background: #ffd870;
+  box-shadow: 0 0 8px #ffd870;
   transform: scale(0);
   transition: transform var(--dur-fast) var(--ease-out);
 }
@@ -760,15 +816,16 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   flex-direction: column;
   gap: var(--sp-4);
   padding-left: var(--sp-5);
-  border-left: 2px solid rgba(90, 58, 24, 0.25);
+  border-left: 2px solid rgba(255, 220, 120, 0.2);
 }
 
 .rsvp-fineprint {
   font-family: var(--font-utility);
   font-size: var(--fs-xs);
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0;
-  color: #5a3a18;
+  color: #ad8a40;
   text-align: center;
   margin-top: var(--sp-3);
 }
