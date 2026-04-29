@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Capitol Census — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+</head>
+<body data-role="capitol">
+
+  <div class="gate" id="gate" role="button" tabindex="0" aria-label="Begin">
+    <div class="gate__inner">
+      <strong>Panem Capitol Broadcast</strong>
+      Census terminal — registration required
+      <div class="gate__pulse">— tap anywhere to receive transmission —</div>
+    </div>
+  </div>
+
+  <main class="stage">
+    <article class="artifact" id="artifact" hidden>
+      <div class="artifact__seal" id="seal-slot"></div>
+      <h1 class="artifact__heading" id="heading"></h1>
+      <p class="artifact__subheading" id="subheading"></p>
+      <div class="artifact__body" id="body"></div>
+
+      <form class="rsvp-form" id="rsvp-form" hidden>
+        <label class="rsvp-field">
+          <span class="rsvp-label">Citizen name</span>
+          <input type="text" name="name" required autocomplete="name" placeholder="As recorded by the Capitol">
+        </label>
+
+        <fieldset class="rsvp-field rsvp-field--choice">
+          <legend class="rsvp-label">Declaration of attendance</legend>
+          <label class="rsvp-radio">
+            <input type="radio" name="attending" value="yes" required>
+            <span>I will attend the reaping</span>
+          </label>
+          <label class="rsvp-radio">
+            <input type="radio" name="attending" value="no">
+            <span>I decline. Long live Panem.</span>
+          </label>
+        </fieldset>
+
+        <label class="rsvp-field" id="companion-count-field">
+          <span class="rsvp-label">Traveling companions</span>
+          <select name="companion_count" id="companion-count">
+            <option value="0">0 — I travel alone</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+
+        <div id="companion-fields" class="rsvp-companions" hidden></div>
+
+        <label class="rsvp-field">
+          <span class="rsvp-label">Address of record (optional)</span>
+          <input type="text" name="contact" placeholder="Phone or email — for invitation delivery">
+        </label>
+
+        <button class="continue is-ready" type="submit">Transmit to Capitol ▸</button>
+        <p class="rsvp-fineprint">All declarations are recorded. Failure to respond constitutes treason.</p>
+      </form>
+
+      <div class="rsvp-confirmation" id="confirmation" hidden>
+        <h2 class="artifact__heading">Transmission Received</h2>
+        <p class="artifact__signoff">
+          The Capitol thanks you for your compliance.<br>
+          Your reaping notice will arrive in due course.
+        </p>
+      </div>
+    </article>
+  </main>
+
+  <script type="module">
+    import { typeInto } from "/scripts/typewriter.js";
+    import { unlockAudio, dingBell } from "/scripts/audio.js";
+    import { jitterChars } from "/scripts/jitter.js";
+
+    const CAPITOL_SEAL_URL = "/assets/seals/capitol.svg";
+
+    async function fetchInlineSVG(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.text();
+      } catch { return null; }
+    }
+
+    async function injectSVG(target, url) {
+      const svg = await fetchInlineSVG(url);
+      if (svg) target.innerHTML = svg;
+    }
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function run() {
+      const gate = document.getElementById("gate");
+      const artifact = document.getElementById("artifact");
+      const begin = () => {
+        unlockAudio();
+        gate.classList.add("dismissing");
+        setTimeout(() => gate.remove(), 900);
+        artifact.hidden = false;
+        startSequence();
+      };
+      gate.addEventListener("click", begin, { once: true });
+      gate.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") begin();
+      }, { once: true });
+    }
+
+    async function startSequence() {
+      await injectSVG(document.getElementById("seal-slot"), CAPITOL_SEAL_URL);
+
+      const heading = document.getElementById("heading");
+      const subheading = document.getElementById("subheading");
+      const body = document.getElementById("body");
+
+      await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
+        speed: 95, jitter: 30, ding: false, onDone: r
+      }));
+      dingBell();
+      await wait(500);
+
+      await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  CITIZEN CENSUS", {
+        speed: 60, jitter: 25, ding: false, onDone: r
+      }));
+      await wait(700);
+
+      const proclamation = `All citizens of Panem are required to declare their attendance at the [d]75th[/d] Annual Reaping, observed Halloween Eve, two-thousand and twenty-six.\n\nKindly disclose the names of any traveling companions, that the Capitol may prepare their reaping notices in advance.`;
+
+      await new Promise(r => typeInto(body, proclamation, {
+        speed: 55, jitter: 28, sentencePause: 450, onDone: r
+      }));
+
+      await wait(800);
+      const form = document.getElementById("rsvp-form");
+      form.hidden = false;
+      form.classList.add("is-ready");
+    }
+
+    // Companion field generation
+    const countSelect = document.getElementById("companion-count");
+    const companionsWrap = document.getElementById("companion-fields");
+    countSelect.addEventListener("change", () => {
+      const n = parseInt(countSelect.value, 10) || 0;
+      companionsWrap.innerHTML = "";
+      companionsWrap.hidden = n === 0;
+      for (let i = 1; i <= n; i++) {
+        const label = document.createElement("label");
+        label.className = "rsvp-field";
+        label.innerHTML = `
+          <span class="rsvp-label">Companion ${i} — full name</span>
+          <input type="text" name="companion_${i}" required autocomplete="off">
+        `;
+        companionsWrap.appendChild(label);
+      }
+    });
+
+    // Form submission — mailto + localStorage backup
+    document.getElementById("rsvp-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd.entries());
+
+      // Backup to localStorage
+      try {
+        const log = JSON.parse(localStorage.getItem("capitol_rsvp_log") || "[]");
+        log.push({ ...data, _at: new Date().toISOString() });
+        localStorage.setItem("capitol_rsvp_log", JSON.stringify(log));
+      } catch {}
+
+      // Compose mailto body
+      const lines = [];
+      lines.push(`Citizen: ${data.name || "(no name)"}`);
+      lines.push(`Attending: ${data.attending || "(undeclared)"}`);
+      const cc = parseInt(data.companion_count || "0", 10);
+      lines.push(`Companions: ${cc}`);
+      for (let i = 1; i <= cc; i++) {
+        lines.push(`  ${i}. ${data["companion_" + i] || ""}`);
+      }
+      if (data.contact) lines.push(`Contact: ${data.contact}`);
+      lines.push("");
+      lines.push("— Transmitted via Panem Capitol Census Terminal");
+
+      const subject = `Capitol RSVP — ${data.name || "Unidentified Citizen"}`;
+      const mailto = `mailto:lavartay11@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
+      window.location.href = mailto;
+
+      // Show confirmation regardless of mail client behavior
+      e.target.hidden = true;
+      document.getElementById("confirmation").hidden = false;
+    });
+
+    run().catch(console.error);
+  </script>
+</body>
+</html>
