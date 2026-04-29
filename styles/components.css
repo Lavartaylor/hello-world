@@ -359,6 +359,15 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   z-index: 4;
 }
 
+/* Center scrim — darkens the screen middle so cream text reads on bright blue */
+.crt__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0, 10, 30, 0.55) 0%, rgba(0, 10, 30, 0.25) 45%, transparent 80%);
+  z-index: 1;
+}
+
 /* Boot/tune-in flash on first load */
 .crt__bootflash {
   position: absolute;
@@ -404,9 +413,12 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  padding: clamp(20px, 4vh, 48px) clamp(28px, 6vw, 80px);
-  color: #f1e6c8;
-  text-shadow: 0 0 4px rgba(243, 220, 160, 0.3), 0 0 16px rgba(243, 200, 100, 0.18);
+  padding: clamp(20px, 4vh, 48px) clamp(28px, 6vw, 80px) clamp(120px, 14vh, 160px);
+  color: #fff8e0;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.7),
+    0 0 18px rgba(255, 220, 120, 0.18);
 }
 
 .broadcast-header {
@@ -481,21 +493,24 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 }
 .broadcast-subheading {
   font-family: var(--font-utility);
-  font-size: clamp(0.75rem, 1.4vw, 1rem);
+  font-size: clamp(0.95rem, 1.7vw, 1.25rem);
+  font-weight: 700;
   text-transform: uppercase;
-  color: #d4b870;
+  color: #ffe4a0;
   margin-bottom: var(--sp-7);
   letter-spacing: 0;
 }
 
 .broadcast-body {
-  font-family: var(--font-typewriter);
-  font-size: clamp(1rem, 1.6vw, 1.35rem);
-  line-height: 1.6;
-  color: #f1e6c8;
-  max-width: 60ch;
+  font-family: var(--font-utility);
+  font-weight: 500;
+  font-size: clamp(1.25rem, 2.2vw, 1.85rem);
+  line-height: 1.4;
+  color: #fff8e0;
+  max-width: 28ch;
   margin: 0 auto var(--sp-6);
-  min-height: 8em;
+  min-height: 6em;
+  text-transform: uppercase;
   white-space: pre-wrap;
 }
 
@@ -540,14 +555,91 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   margin-top: var(--sp-6);
   font-family: var(--font-artifact);
   font-style: italic;
-  color: #d4b870;
-  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
+  color: #ffe4a0;
+  font-size: clamp(1.15rem, 1.8vw, 1.55rem);
   white-space: pre-wrap;
+  line-height: 1.4;
 }
 
-/* Continue button on broadcast — re-style the existing tape to read on a TV */
-.broadcast-main .continue {
-  margin-top: var(--sp-7);
+/* ========================================================
+   Keyboard key — Acknowledge button at bottom of viewport
+   Sits on top of the CRT but reads as a separate input device
+   ======================================================== */
+
+.keyboard-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 18px 0 22px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* let key handle its own */
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 60%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+.key {
+  pointer-events: auto;
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #f0e8d4;
+  padding: 16px 42px;
+  background: linear-gradient(180deg, #3a3530 0%, #2a2622 50%, #1a1714 100%);
+  border: 1px solid #4a4540;
+  border-bottom-color: #0e0c0a;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.18),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.55),
+    0 4px 0 #0a0908,
+    0 8px 14px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), opacity var(--dur-med) var(--ease-out);
+  opacity: 0;
+  pointer-events: none;
+}
+.key.is-ready {
+  opacity: 1;
+  pointer-events: auto;
+}
+.key:hover {
+  background: linear-gradient(180deg, #45403a 0%, #322d28 50%, #1f1b18 100%);
+  color: #fff8e0;
+}
+.key:active,
+.key:focus-visible {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 1px 0 #0a0908,
+    0 3px 6px rgba(0, 0, 0, 0.5);
+  outline: none;
+}
+.key:disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+.key__caption {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-utility);
+  font-weight: 500;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: rgba(240, 232, 212, 0.45);
+  letter-spacing: 0;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 /* Footer marquee — Capitol propaganda ticker */

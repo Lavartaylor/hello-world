@@ -60,6 +60,56 @@ export function clickKey(opts = {}) {
   src.stop(now + dur);
 }
 
+// Continuous TV/VCR static hiss — a soft, bandwidth-limited noise loop.
+// Used during the broadcast version so the page sounds like dead air on a CRT.
+let hissNodes = null;
+export function startHiss(opts = {}) {
+  if (muted || !unlocked) return;
+  if (hissNodes) return; // already playing
+  const c = ensureCtx();
+  const seconds = 4;
+  const buf = c.createBuffer(1, c.sampleRate * seconds, c.sampleRate);
+  const data = buf.getChannelData(0);
+  // Pink-ish noise: weighted sum of random samples gives a softer sound than white
+  let b0 = 0, b1 = 0, b2 = 0;
+  for (let i = 0; i < data.length; i++) {
+    const w = Math.random() * 2 - 1;
+    b0 = 0.99765 * b0 + w * 0.0990460;
+    b1 = 0.96300 * b1 + w * 0.2965164;
+    b2 = 0.57000 * b2 + w * 1.0526913;
+    data[i] = (b0 + b1 + b2 + w * 0.1848) * 0.18;
+  }
+  const src = c.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  // High-pass: kills low rumble. Low-pass: keeps it gentle (TV-hiss frequency band).
+  const hp = c.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 600;
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 5500;
+  const g = c.createGain();
+  g.gain.value = 0; // ramp in
+  src.connect(hp).connect(lp).connect(g).connect(c.destination);
+  src.start();
+  const now = c.currentTime;
+  g.gain.linearRampToValueAtTime(opts.volume ?? 0.07, now + 0.4);
+  hissNodes = { src, gain: g };
+}
+
+export function stopHiss() {
+  if (!hissNodes) return;
+  const c = ensureCtx();
+  const now = c.currentTime;
+  const { src, gain } = hissNodes;
+  hissNodes = null;
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.setValueAtTime(gain.gain.value, now);
+  gain.gain.linearRampToValueAtTime(0, now + 0.4);
+  setTimeout(() => { try { src.stop(); } catch {} }, 500);
+}
+
 // Carriage return ding for line breaks (Selectric-style).
 export function dingBell(opts = {}) {
   if (muted || !unlocked) return;

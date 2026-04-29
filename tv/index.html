@@ -15,6 +15,7 @@
 <body class="broadcast" data-role="capitol">
 
   <div class="crt">
+    <div class="crt__scrim"></div>
     <div class="crt__static"></div>
     <div class="crt__scanlines"></div>
     <div class="crt__vignette"></div>
@@ -41,7 +42,6 @@
         </span>
         <div class="broadcast-signoff" id="signoff"></div>
       </div>
-      <button class="continue" id="continue" type="button">Acknowledge</button>
     </main>
 
     <footer class="broadcast-footer">
@@ -52,9 +52,17 @@
     </footer>
   </div>
 
+  <!-- Keyboard input — sits below the broadcast, on top of the page -->
+  <div class="keyboard-bar">
+    <button class="key" id="continue" type="button">
+      Acknowledge
+      <span class="key__caption">press to confirm</span>
+    </button>
+  </div>
+
   <script type="module">
     import { typeInto } from "/scripts/typewriter.js";
-    import { unlockAudio, dingBell } from "/scripts/audio.js";
+    import { unlockAudio, dingBell, startHiss } from "/scripts/audio.js";
     import { jitterChars } from "/scripts/jitter.js";
     import { loadTributes, getSlug, findTribute, districtName } from "/scripts/data.js";
 
@@ -97,6 +105,7 @@
 
       const begin = async () => {
         unlockAudio();
+        startHiss();          // ambient TV/VCR static for the duration
         startBtn.style.transition = "opacity 0.4s";
         startBtn.style.opacity = "0";
         setTimeout(() => startBtn.remove(), 400);
@@ -122,26 +131,26 @@
       const cont = document.getElementById("continue");
 
       await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
-        speed: 95, jitter: 30, ding: false, onDone: r
+        speed: 95, jitter: 30, ding: false, clicks: false, onDone: r
       }));
       dingBell();
       await wait(500);
 
       await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  REAPING NOTICE", {
-        speed: 60, jitter: 25, ding: false, onDone: r
+        speed: 60, jitter: 25, ding: false, clicks: false, onDone: r
       }));
       await wait(800);
 
       const body1 = `By edict of the Gamemakers, and in accordance with the Treaty of the Treason, the following citizen has been selected to represent their district in the [d]${ordinal(75)}[/d] Annual Hunger Games:`;
       await new Promise(r => typeInto(body, body1, {
-        speed: 55, jitter: 28, sentencePause: 450, onDone: r
+        speed: 55, jitter: 28, sentencePause: 450, clicks: false, ding: false, onDone: r
       }));
       await wait(900);
 
       reveal.hidden = false;
       nameLine.textContent = "";
       await new Promise(r => typeInto(nameLine, tribute.name.toUpperCase(), {
-        speed: 180, jitter: 60, sentencePause: 0, onDone: r
+        speed: 180, jitter: 60, sentencePause: 0, clicks: false, ding: false, onDone: r
       }));
       jitterChars(nameLine, { maxRot: 4, maxShift: 1.8, maxScale: 0.05 });
       dingBell();
@@ -153,7 +162,7 @@
 
       const sig = `\nMay the odds be ever in your favor.\n— The Gamemakers`;
       await new Promise(r => typeInto(signoff, sig, {
-        speed: 70, jitter: 28, ding: false, onDone: r
+        speed: 70, jitter: 28, ding: false, clicks: false, onDone: r
       }));
 
       await wait(400);
