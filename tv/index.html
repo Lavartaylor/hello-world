@@ -83,7 +83,7 @@
 
   <script type="module">
     import { typeInto } from "/scripts/typewriter.js";
-    import { unlockAudio, dingBell, startHiss } from "/scripts/audio.js";
+    import { dingBell, ensureAudioReady } from "/scripts/audio.js";
     import { jitterChars } from "/scripts/jitter.js";
     import { loadTributes, getSlug, findTribute, districtName } from "/scripts/data.js";
 
@@ -115,24 +115,12 @@
       document.getElementById("hud-district").textContent = String(tribute.district).padStart(2, "0");
       document.getElementById("hud-points").textContent = (tribute.points ?? 0).toLocaleString();
 
-      // Need a tap to unlock audio (browser policy)
-      const startBtn = document.createElement("div");
-      startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
-      startBtn.textContent = "▸ tap to receive transmission";
-      document.body.appendChild(startBtn);
-
-      const begin = async () => {
-        unlockAudio();
-        startHiss();          // ambient TV/VCR static for the duration
-        startBtn.style.transition = "opacity 0.4s";
-        startBtn.style.opacity = "0";
-        setTimeout(() => startBtn.remove(), 400);
-
-        // Brief signal-acquisition hold, then start typing
-        await wait(1300);
-        await runBroadcast(tribute, data);
-      };
-      startBtn.addEventListener("click", begin, { once: true });
+      ensureAudioReady({
+        onReady: async () => {
+          await wait(1100);
+          await runBroadcast(tribute, data);
+        }
+      });
     }
 
     async function runBroadcast(tribute, data) {

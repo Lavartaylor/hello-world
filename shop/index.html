@@ -52,35 +52,23 @@
 
     <main class="broadcast-main">
       <h1 class="screen-form__title">Capitol Marketplace</h1>
-      <p class="screen-form__subtitle" id="shop-subtitle">Spend credits on sponsorships or sabotage. Target any citizen.</p>
 
       <div class="shop-grid" id="shop-grid"></div>
     </main>
-
-    <footer class="broadcast-footer">
-      <div class="broadcast-marquee">
-        <span>● CAPITOL MARKETPLACE — SPONSOR. SABOTAGE. SPEND. — ALL TRANSACTIONS RECORDED — LONG LIVE PANEM</span>
-        <span>● CAPITOL MARKETPLACE — SPONSOR. SABOTAGE. SPEND. — ALL TRANSACTIONS RECORDED — LONG LIVE PANEM</span>
-      </div>
-    </footer>
   </div>
 
   <script type="module">
-    import { unlockAudio, startHiss } from "/scripts/audio.js";
+    import { ensureAudioReady } from "/scripts/audio.js";
     import { fetchTributes, fetchTribute, recordPurchase } from "/scripts/supabase.js";
     import { getSlug } from "/scripts/data.js";
 
     // Stub items — final list and prices get locked once challenges are picked.
     const ITEMS = [
-      { id:"hint",       kind:"sponsor", cost:50,  name:"Hint",            desc:"Whisper a clue on a weekly puzzle." },
-      { id:"timeext",    kind:"sponsor", cost:100, name:"Time Extension",  desc:"Add 24 hours to a tribute's challenge deadline." },
-      { id:"boost5",     kind:"sponsor", cost:150, name:"Score Boost +5",  desc:"Add 5 points to a tribute's score on the next challenge." },
-      { id:"immunity",   kind:"sponsor", cost:250, name:"One-Round Immunity", desc:"Tribute cannot be eliminated in the next round." },
-      { id:"healing",    kind:"sponsor", cost:100, name:"Healing Drop",    desc:"Restore a tribute mid-arena." },
-      { id:"intel",      kind:"sponsor", cost:75,  name:"Intel Drop",      desc:"Send a tribute info on the next obstacle." },
-      { id:"tripwire",   kind:"sabotage",cost:75,  name:"Trip Wire",       desc:"Halve a tribute's next score." },
-      { id:"distraction",kind:"sabotage",cost:50,  name:"Distraction",     desc:"Tribute loses 25 points on the next challenge." },
-      { id:"ammo",       kind:"sponsor", cost:30,  name:"Ammo Drop",       desc:"A round of nerf darts dropped into the arena." }
+      { id:"hint",      kind:"sponsor", cost:50,  name:"Hint",         desc:"Whisper a clue on the next challenge." },
+      { id:"boost5",    kind:"sponsor", cost:150, name:"Score Boost",  desc:"Add 5 points to a tribute's next score." },
+      { id:"immunity",  kind:"sponsor", cost:250, name:"Immunity",     desc:"Tribute cannot be eliminated next round." },
+      { id:"tripwire",  kind:"sabotage",cost:75,  name:"Trip Wire",    desc:"Halve a tribute's next score." },
+      { id:"distraction",kind:"sabotage",cost:50, name:"Distraction",  desc:"Tribute loses 25 points next challenge." }
     ];
 
     let currentTribute = null;
@@ -94,7 +82,6 @@
       if (!currentTribute) {
         document.getElementById("hud-name").textContent = "GUEST";
         document.getElementById("hud-credits").textContent = "—";
-        document.getElementById("shop-subtitle").textContent = "Marketplace browsing only — log in to spend credits.";
       } else {
         document.getElementById("hud-name").textContent = currentTribute.name.toUpperCase();
         document.getElementById("hud-credits").textContent = (currentTribute.credits ?? 0).toLocaleString();
@@ -163,23 +150,8 @@
       });
     }
 
-    // Tap-to-receive gate
-    const startBtn = document.createElement("div");
-    startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
-    startBtn.textContent = "▸ tap to enter the marketplace";
-    document.body.appendChild(startBtn);
-    startBtn.addEventListener("click", () => {
-      unlockAudio();
-      startHiss();
-      startBtn.style.transition = "opacity 0.4s";
-      startBtn.style.opacity = "0";
-      setTimeout(() => startBtn.remove(), 400);
-    }, { once: true });
-
-    run().catch(err => {
-      console.error(err);
-      document.getElementById("shop-subtitle").textContent = "Transmission error — check console.";
-    });
+    ensureAudioReady();
+    run().catch(err => console.error(err));
   </script>
 </body>
 </html>

@@ -34,16 +34,6 @@
   <div class="broadcast-layout">
     <header class="broadcast-header">
       <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
-      <div class="broadcast-hud">
-        <div class="broadcast-hud__row">
-          <span class="broadcast-hud__label">Citizen</span>
-          <span class="broadcast-hud__value">UNREGISTERED</span>
-        </div>
-        <div class="broadcast-hud__row">
-          <span class="broadcast-hud__label">Status</span>
-          <span class="broadcast-hud__value" style="color:#ff6060;">PENDING</span>
-        </div>
-      </div>
     </header>
 
     <main class="broadcast-main">
@@ -63,7 +53,6 @@
       <!-- SCREEN 2 — registration form -->
       <div class="screen screen--form" id="screen-form" hidden>
         <h1 class="screen-form__title">Citizen Registration</h1>
-        <p class="screen-form__subtitle">All fields recorded by the Capitol</p>
 
         <form class="rsvp-form is-ready" id="rsvp-form">
           <label class="rsvp-field">
@@ -97,11 +86,6 @@
             </div>
           </fieldset>
 
-          <label class="rsvp-field rsvp-field--full">
-            <span class="rsvp-label">Address of record (optional)</span>
-            <input type="text" name="contact" placeholder="Phone or email — for invitation delivery">
-          </label>
-
           <div class="rsvp-field rsvp-field--full rsvp-photo">
             <span class="rsvp-label">Capitol portrait (optional)</span>
 
@@ -122,8 +106,6 @@
           </div>
 
           <div id="companion-fields" class="rsvp-companions" hidden></div>
-
-          <p class="rsvp-fineprint">All declarations are recorded. Failure to respond constitutes treason.</p>
         </form>
       </div>
 
@@ -137,12 +119,6 @@
       </div>
     </main>
 
-    <footer class="broadcast-footer">
-      <div class="broadcast-marquee">
-        <span>● 75TH ANNUAL HUNGER GAMES — CITIZEN CENSUS — REGISTRATION REQUIRED — LONG LIVE PANEM — MAY THE ODDS BE EVER IN YOUR FAVOR</span>
-        <span>● 75TH ANNUAL HUNGER GAMES — CITIZEN CENSUS — REGISTRATION REQUIRED — LONG LIVE PANEM — MAY THE ODDS BE EVER IN YOUR FAVOR</span>
-      </div>
-    </footer>
   </div>
 
   <!-- Tuner knob — submit lives on the right side now -->
@@ -179,26 +155,13 @@
 
   <script type="module">
     import { typeInto } from "/scripts/typewriter.js";
-    import { unlockAudio, dingBell, startHiss } from "/scripts/audio.js";
+    import { ensureAudioReady } from "/scripts/audio.js";
     import { submitRsvp } from "/scripts/supabase.js";
 
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-    async function run() {
-      const startBtn = document.createElement("div");
-      startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
-      startBtn.textContent = "▸ tap to receive transmission";
-      document.body.appendChild(startBtn);
-
-      startBtn.addEventListener("click", async () => {
-        unlockAudio();
-        startHiss();
-        startBtn.style.transition = "opacity 0.4s";
-        startBtn.style.opacity = "0";
-        setTimeout(() => startBtn.remove(), 400);
-        await wait(1300);
-        await runBroadcast();
-      }, { once: true });
+    function run() {
+      ensureAudioReady({ onReady: async () => { await wait(900); await runBroadcast(); } });
     }
 
     async function runBroadcast() {
@@ -216,13 +179,12 @@
       }));
       await wait(400);
 
-      const proclamation = `All citizens of Panem are required to declare their attendance at the [d]75th[/d] Annual Reaping, observed Halloween Eve, two-thousand and twenty-six.\n\nKindly disclose the names of any traveling companions, that the Capitol may prepare their reaping notices in advance.`;
+      const proclamation = `Declare your attendance at the [d]75th[/d] Annual Reaping — Halloween Eve, two-thousand and twenty-six.`;
 
       await new Promise(r => typeInto(body, proclamation, {
         speed: 30, jitter: 15, sentencePause: 280, clicks: false, ding: false, onDone: r
       }));
 
-      // Reveal the continue button — user advances to form on click
       await wait(400);
       document.getElementById("continue-cta").classList.add("is-ready");
     }
@@ -401,7 +363,6 @@
           attending: data.attending,
           companion_count: cc,
           companion_names,
-          contact: data.contact || null,
           profile_photo: data.profile_photo || null
         });
         tuner.classList.add("is-locked");

@@ -204,6 +204,36 @@ export function stopHiss() {
   setTimeout(() => { try { src.stop(); } catch {} }, 500);
 }
 
+// Drop a one-time tap gate on the page. Once a user taps the gate on any
+// page, the unlocked flag is stored in sessionStorage so subsequent pages
+// in the same browser tab skip the gate entirely.
+export function ensureAudioReady({ label = "▸ tap to begin transmission", onReady } = {}) {
+  const already = sessionStorage.getItem("capitol_audio_unlocked") === "1";
+  if (already) {
+    // Try to resume audio silently. If the browser's autoplay policy blocks,
+    // wait for the next user interaction anywhere on the page.
+    try { unlockAudio(); startHiss(); } catch {}
+    document.addEventListener("click", () => {
+      try { unlockAudio(); startHiss(); } catch {}
+    }, { once: true });
+    if (onReady) onReady();
+    return;
+  }
+  const gate = document.createElement("div");
+  gate.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
+  gate.textContent = label;
+  document.body.appendChild(gate);
+  gate.addEventListener("click", () => {
+    unlockAudio();
+    startHiss();
+    sessionStorage.setItem("capitol_audio_unlocked", "1");
+    gate.style.transition = "opacity 0.4s";
+    gate.style.opacity = "0";
+    setTimeout(() => gate.remove(), 400);
+    if (onReady) onReady();
+  }, { once: true });
+}
+
 // Carriage return ding for line breaks (Selectric-style).
 export function dingBell(opts = {}) {
   if (muted || !unlocked) return;

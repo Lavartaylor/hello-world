@@ -39,31 +39,18 @@
   <div class="broadcast-layout">
     <header class="broadcast-header">
       <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
-      <div class="broadcast-hud">
-        <div class="broadcast-hud__row">
-          <span class="broadcast-hud__label">Channel</span>
-          <span class="broadcast-hud__value">LIVE STANDINGS</span>
-        </div>
-      </div>
     </header>
 
     <main class="broadcast-main">
-      <h1 class="screen-form__title" id="lb-title">75th Annual Hunger Games — Leaderboard</h1>
-      <p class="screen-form__subtitle" id="lb-subtitle">Loading transmission…</p>
+      <h1 class="screen-form__title" id="lb-title">Live Standings</h1>
+      <p class="screen-form__subtitle" id="lb-subtitle">Loading…</p>
 
       <div class="leaderboard" id="leaderboard"></div>
     </main>
-
-    <footer class="broadcast-footer">
-      <div class="broadcast-marquee">
-        <span>● 75TH ANNUAL HUNGER GAMES — LIVE STANDINGS — TOP 10 ENTER THE ARENA — LONG LIVE PANEM</span>
-        <span>● 75TH ANNUAL HUNGER GAMES — LIVE STANDINGS — TOP 10 ENTER THE ARENA — LONG LIVE PANEM</span>
-      </div>
-    </footer>
   </div>
 
   <script type="module">
-    import { unlockAudio, startHiss } from "/scripts/audio.js";
+    import { ensureAudioReady } from "/scripts/audio.js";
     import { fetchTributes } from "/scripts/supabase.js";
 
     // The Reaping Line — top 10 are Tributes after Week 3 freeze.
@@ -117,19 +104,7 @@
       list.innerHTML = html.join("");
     }
 
-    // Tap-to-receive gate (audio policy)
-    const startBtn = document.createElement("div");
-    startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
-    startBtn.textContent = "▸ tap to tune in";
-    document.body.appendChild(startBtn);
-    startBtn.addEventListener("click", () => {
-      unlockAudio();
-      startHiss();
-      startBtn.style.transition = "opacity 0.4s";
-      startBtn.style.opacity = "0";
-      setTimeout(() => startBtn.remove(), 400);
-    }, { once: true });
-
+    ensureAudioReady();
     run().catch(err => {
       console.error(err);
       document.getElementById("lb-subtitle").textContent = "Transmission error — check console.";
