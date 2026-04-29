@@ -117,6 +117,7 @@
   <script type="module">
     import { typeInto } from "/scripts/typewriter.js";
     import { unlockAudio, dingBell, startHiss } from "/scripts/audio.js";
+    import { submitRsvp } from "/scripts/supabase.js";
 
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -187,37 +188,43 @@
       }
     });
 
-    // Form submission — mailto + localStorage backup
-    document.getElementById("rsvp-form").addEventListener("submit", (e) => {
+    // Form submission — write to Supabase, keep localStorage as a backup
+    document.getElementById("rsvp-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const data = Object.fromEntries(fd.entries());
+      const cc = parseInt(data.companion_count || "0", 10);
+      const companion_names = [];
+      for (let i = 1; i <= cc; i++) {
+        if (data["companion_" + i]) companion_names.push(data["companion_" + i]);
+      }
 
+      // Local backup (in case Supabase is unreachable)
       try {
         const log = JSON.parse(localStorage.getItem("capitol_rsvp_log") || "[]");
-        log.push({ ...data, _at: new Date().toISOString() });
+        log.push({ ...data, companion_names, _at: new Date().toISOString() });
         localStorage.setItem("capitol_rsvp_log", JSON.stringify(log));
       } catch {}
 
-      const lines = [];
-      lines.push(`Citizen: ${data.name || "(no name)"}`);
-      lines.push(`Attending: ${data.attending || "(undeclared)"}`);
-      const cc = parseInt(data.companion_count || "0", 10);
-      lines.push(`Companions: ${cc}`);
-      for (let i = 1; i <= cc; i++) {
-        lines.push(`  ${i}. ${data["companion_" + i] || ""}`);
+      const submitKey = document.getElementById("submit-key");
+      submitKey.disabled = true;
+
+      try {
+        await submitRsvp({
+          name: data.name,
+          attending: data.attending,
+          companion_count: cc,
+          companion_names,
+          contact: data.contact || null
+        });
+        e.target.hidden = true;
+        submitKey.hidden = true;
+        document.getElementById("confirmation").hidden = false;
+      } catch (err) {
+        console.error("RSVP submission failed:", err);
+        submitKey.disabled = false;
+        alert("Transmission failed — the Capitol terminal is unreachable. Please try again.");
       }
-      if (data.contact) lines.push(`Contact: ${data.contact}`);
-      lines.push("");
-      lines.push("— Transmitted via Panem Capitol Census Terminal");
-
-      const subject = `Capitol RSVP — ${data.name || "Unidentified Citizen"}`;
-      const mailto = `mailto:lavartay11@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
-      window.location.href = mailto;
-
-      e.target.hidden = true;
-      document.getElementById("submit-key").hidden = true;
-      document.getElementById("confirmation").hidden = false;
     });
 
     run().catch(console.error);
