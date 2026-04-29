@@ -11,39 +11,74 @@
   <link rel="stylesheet" href="/styles/reset.css">
   <link rel="stylesheet" href="/styles/tokens.css">
   <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    /* Cover (closed-letter) content */
+    .letter__cover {
+      text-align: center;
+      padding: var(--sp-5) 0 var(--sp-3);
+      transition: opacity var(--dur-med) var(--ease-out);
+    }
+    .letter__cover-line {
+      font-family: var(--font-artifact);
+      font-style: italic;
+      font-size: var(--fs-md);
+      color: #3a2510;
+      margin: 0 0 var(--sp-3);
+      letter-spacing: 0.02em;
+    }
+    .letter__cover-line--small {
+      font-family: var(--font-utility);
+      font-style: normal;
+      text-transform: uppercase;
+      font-size: var(--fs-xs);
+      color: #5a3a18;
+      letter-spacing: 0;
+      font-weight: 500;
+    }
+    .letter.is-open .letter__cover { opacity: 0; pointer-events: none; }
+  </style>
 </head>
 <body data-role="tribute">
 
-  <!-- Tap-to-begin gate (the sealed envelope from the Capitol) -->
-  <div class="gate" id="gate" role="button" tabindex="0" aria-label="Begin">
-    <div class="gate__inner">
-      <div class="gate__seal" id="gate-seal"></div>
-      <strong>Panem Capitol Broadcast</strong>
-      Sealed correspondence — for citizen eyes only
-      <div class="gate__pulse">— tap anywhere to break the seal —</div>
-    </div>
-  </div>
-
   <main class="stage">
-    <article class="artifact" id="artifact" hidden>
-      <div class="artifact__seal" id="seal-slot">
-        <!-- District seal injected here at runtime — identifies the recipient -->
+
+    <!-- Folded sealed letter — tap anywhere to break the seal -->
+    <div class="letter" id="letter" role="button" tabindex="0" aria-label="Break the seal and open the reaping notice">
+      <div class="letter__paper">
+        <!-- Cover (visible while sealed) -->
+        <div class="letter__cover">
+          <p class="letter__cover-line">For the eyes of the named recipient.</p>
+          <p class="letter__cover-line letter__cover-line--small">Tampering will be reported to the Peacekeepers.</p>
+        </div>
+        <p class="letter__cover-hint">— tap to break the seal —</p>
+
+        <!-- Inside (revealed on open) -->
+        <div class="letter__inside">
+          <article class="artifact" id="artifact">
+            <div class="artifact__seal" id="seal-slot">
+              <!-- District seal injected here -->
+            </div>
+            <h1 class="artifact__heading" id="heading"></h1>
+            <p class="artifact__subheading" id="subheading"></p>
+            <div class="artifact__body" id="body"></div>
+            <div id="reveal-slot" hidden>
+              <span class="artifact__name" id="name-line"></span>
+              <span class="artifact__district" id="district-line">
+                <small>OF DISTRICT</small>
+                <span id="district-num"></span>
+              </span>
+              <div class="artifact__signoff" id="signoff"></div>
+            </div>
+            <div style="text-align:center">
+              <button class="continue" id="continue" type="button">Acknowledge ▸</button>
+            </div>
+          </article>
+        </div>
       </div>
-      <h1 class="artifact__heading" id="heading"></h1>
-      <p class="artifact__subheading" id="subheading"></p>
-      <div class="artifact__body" id="body"></div>
-      <div id="reveal-slot" hidden>
-        <span class="artifact__name" id="name-line"></span>
-        <span class="artifact__district" id="district-line">
-          <small>OF DISTRICT</small>
-          <span id="district-num"></span>
-        </span>
-        <div class="artifact__signoff" id="signoff"></div>
-      </div>
-      <div style="text-align:center">
-        <button class="continue" id="continue" type="button">Acknowledge ▸</button>
-      </div>
-    </article>
+
+      <!-- Wax seal pinned over the fold -->
+      <div class="letter__seal letter__seal--placeholder" id="wax-seal" aria-hidden="true">C</div>
+    </div>
 
     <!-- Lost-tribute fallback -->
     <article class="artifact" id="not-found" hidden>
@@ -58,18 +93,16 @@
   <script type="module">
     import { typeInto } from "/scripts/typewriter.js";
     import { unlockAudio, dingBell } from "/scripts/audio.js";
-    import { jitterChars, jitterEls } from "/scripts/jitter.js";
+    import { jitterChars } from "/scripts/jitter.js";
     import { loadTributes, getSlug, findTribute, districtName } from "/scripts/data.js";
 
-    const CAPITOL_SEAL_URL = "/assets/seals/capitol.svg";
     const DISTRICT_SEAL_URL = (n) => `/assets/seals/district-${n}.svg`;
 
     async function fetchInlineSVG(url) {
       try {
         const res = await fetch(url);
         if (!res.ok) return null;
-        const text = await res.text();
-        return text;
+        return await res.text();
       } catch { return null; }
     }
 
@@ -83,44 +116,52 @@
       return n + (s[(v-20)%10] || s[v] || s[0]);
     }
 
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
     async function run() {
       const data = await loadTributes();
       const slug = getSlug();
       const tribute = findTribute(data, slug);
-      const artifactEl = document.getElementById("artifact");
+      const letterEl = document.getElementById("letter");
       const notFoundEl = document.getElementById("not-found");
 
       if (!tribute) {
-        document.getElementById("gate").remove();
+        letterEl.style.display = "none";
         notFoundEl.hidden = false;
         return;
       }
 
-      // Apply role-based theme on body
+      // Theme
       document.body.dataset.role = tribute.role || "tribute";
 
-      // Cover (gate) shows the Capitol seal — letter is sealed by the sender
-      injectSVG(document.getElementById("gate-seal"), CAPITOL_SEAL_URL);
+      // Detect a real wax-seal PNG; otherwise keep the CSS placeholder
+      try {
+        const res = await fetch("/assets/wax-seal.png", { method: "HEAD" });
+        if (res.ok) {
+          const seal = document.getElementById("wax-seal");
+          seal.classList.add("letter__seal--png");
+          seal.classList.remove("letter__seal--placeholder");
+          seal.textContent = "";
+        }
+      } catch {}
 
-      // Wait for the gate tap to start the show
-      const gate = document.getElementById("gate");
-      const begin = () => {
+      // Tap to break the seal
+      const open = () => {
         unlockAudio();
-        gate.classList.add("dismissing");
-        setTimeout(() => gate.remove(), 900);
-        artifactEl.hidden = false;
-        startSequence(tribute, data);
+        letterEl.classList.add("is-open");
+        // The bottom flap "drops down" — wait for that motion before typing
+        setTimeout(() => startSequence(tribute, data), 1100);
       };
-      gate.addEventListener("click", begin, { once: true });
-      gate.addEventListener("keydown", e => {
-        if (e.key === "Enter" || e.key === " ") begin();
+      letterEl.addEventListener("click", open, { once: true });
+      letterEl.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
       }, { once: true });
     }
 
     async function startSequence(tribute, data) {
-      // Inside the opened letter — recipient's District seal at the top
+      // District seal at the top of the opened letter
       const districtSealUrl = DISTRICT_SEAL_URL(tribute.district);
-      await injectSVG(document.getElementById("seal-slot"), districtSealUrl);
+      injectSVG(document.getElementById("seal-slot"), districtSealUrl);
 
       const heading = document.getElementById("heading");
       const subheading = document.getElementById("subheading");
@@ -131,66 +172,52 @@
       const signoff = document.getElementById("signoff");
       const cont = document.getElementById("continue");
 
-      const dn = districtName(data, tribute.district);
-      const districtLabel = `District ${tribute.district} — ${dn}`;
-
-      // 1. Heading types in
       await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
         speed: 95, jitter: 30, ding: false, onDone: r
       }));
       dingBell();
       await wait(500);
 
-      // 2. Subheading
       await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  REAPING NOTICE", {
         speed: 60, jitter: 25, ding: false, onDone: r
       }));
       await wait(800);
 
-      // 3. Body — the proclamation
       const body1 = `By edict of the Gamemakers, and in accordance with the Treaty of the Treason, the following citizen has been selected to represent their district in the [d]${ordinal(75)}[/d] Annual Hunger Games:`;
       await new Promise(r => typeInto(body, body1, {
         speed: 55, jitter: 28, sentencePause: 450, onDone: r
       }));
       await wait(900);
 
-      // 4. Name reveal — dramatic
       reveal.hidden = false;
       nameLine.textContent = "";
       await new Promise(r => typeInto(nameLine, tribute.name.toUpperCase(), {
         speed: 180, jitter: 60, sentencePause: 0, onDone: r
       }));
-      // Apply hand-jitter to the typed name letters
       jitterChars(nameLine, { maxRot: 4, maxShift: 1.8, maxScale: 0.05 });
       dingBell();
       await wait(700);
 
-      // 5. District reveal
       districtNum.textContent = String(tribute.district);
       jitterChars(districtNum, { maxRot: 5, maxShift: 2.5, maxScale: 0.08 });
       await wait(600);
 
-      // 6. Sign-off
       const sig = `\nMay the odds be ever in your favor.\n— The Gamemakers`;
       await new Promise(r => typeInto(signoff, sig, {
         speed: 70, jitter: 28, ding: false, onDone: r
       }));
 
-      // 7. Continue button
       await wait(400);
       cont.classList.add("is-ready");
       cont.addEventListener("click", () => {
-        // Stub for now — next page is the tribute home, not built yet.
         cont.disabled = true;
         cont.textContent = "Standing by…";
       });
     }
 
-    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
-
     run().catch(err => {
       console.error(err);
-      document.getElementById("gate").remove();
+      document.getElementById("letter").style.display = "none";
       document.getElementById("not-found").hidden = false;
     });
   </script>
