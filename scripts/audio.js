@@ -94,8 +94,102 @@ export function startHiss(opts = {}) {
   src.connect(hp).connect(lp).connect(g).connect(c.destination);
   src.start();
   const now = c.currentTime;
-  g.gain.linearRampToValueAtTime(opts.volume ?? 0.07, now + 0.4);
+  g.gain.linearRampToValueAtTime(opts.volume ?? 0.035, now + 0.4); // dialed back from 0.07
   hissNodes = { src, gain: g };
+}
+
+// Channel-change click — hard transient + low thump, fires on .key button clicks.
+export function channelClick() {
+  if (muted || !unlocked) return;
+  const c = ensureCtx();
+  const now = c.currentTime;
+
+  // Sharp click transient
+  const dur = 0.04;
+  const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 1.4);
+  }
+  const src = c.createBufferSource();
+  src.buffer = buf;
+  const hp = c.createBiquadFilter();
+  hp.type = "highpass"; hp.frequency.value = 1200;
+  const cg = c.createGain();
+  cg.gain.setValueAtTime(0, now);
+  cg.gain.linearRampToValueAtTime(0.32, now + 0.002);
+  cg.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  src.connect(hp).connect(cg).connect(c.destination);
+  src.start(now); src.stop(now + dur);
+
+  // Low thump — descending pitch for the channel-flip feel
+  const o = c.createOscillator();
+  o.type = "sine";
+  o.frequency.setValueAtTime(140, now);
+  o.frequency.exponentialRampToValueAtTime(45, now + 0.09);
+  const og = c.createGain();
+  og.gain.setValueAtTime(0, now);
+  og.gain.linearRampToValueAtTime(0.13, now + 0.005);
+  og.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+  o.connect(og).connect(c.destination);
+  o.start(now); o.stop(now + 0.12);
+}
+
+// Random radio interference — fires every 8–18 seconds while broadcast is up.
+// Three flavors so it doesn't sound looped.
+export function radioBlip() {
+  if (muted || !unlocked) return;
+  const c = ensureCtx();
+  const now = c.currentTime;
+  const variant = Math.floor(Math.random() * 3);
+
+  if (variant === 0) {
+    // Brief swept tone — distant signal warble
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(700 + Math.random() * 500, now);
+    o.frequency.exponentialRampToValueAtTime(180 + Math.random() * 220, now + 0.32);
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.04, now + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+    o.connect(g).connect(c.destination);
+    o.start(now); o.stop(now + 0.5);
+  } else if (variant === 1) {
+    // Static crackle burst
+    const dur = 0.16 + Math.random() * 0.1;
+    const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.4;
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const f = c.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = 1300 + Math.random() * 1700;
+    f.Q.value = 0.6;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.05, now + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(now); src.stop(now + dur);
+  } else {
+    // Faint morse-like pulses
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = "square";
+    o.frequency.value = 580 + Math.random() * 320;
+    g.gain.setValueAtTime(0, now);
+    const pulses = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < pulses; i++) {
+      const t = now + i * 0.13;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.035, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+    }
+    o.connect(g).connect(c.destination);
+    o.start(now); o.stop(now + pulses * 0.13 + 0.1);
+  }
 }
 
 export function stopHiss() {

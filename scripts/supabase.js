@@ -46,15 +46,21 @@ export async function submitRsvp({ name, attending, companion_count, companion_n
     attending,
     companion_count: parseInt(companion_count || 0, 10),
     companion_names: (companion_names || []).filter(Boolean),
-    contact: contact || null,
-    profile_photo: profile_photo || null
+    contact: contact || null
   };
+  // Only include the photo column when there's actually a photo, so a
+  // missing-column error (migration not run) doesn't break unrelated RSVPs.
+  if (profile_photo) payload.profile_photo = profile_photo;
+
   const { data, error } = await supabase
     .from("hg_rsvps")
     .insert(payload)
     .select()
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error("[submitRsvp] payload:", payload, "error:", error);
+    throw error;
+  }
   return data;
 }
 

@@ -738,7 +738,7 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 .key-link:hover { color: #ff5050; }
 
 /* ========================================================
-   Webcam modal — Capitol Portrait capture
+   Webcam modal — naked video, rounded CRT corners, single shutter
    ======================================================== */
 .webcam-modal {
   position: fixed;
@@ -746,71 +746,294 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   z-index: 100;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.86);
+  backdrop-filter: blur(6px);
   padding: var(--sp-5);
+  gap: var(--sp-6);
+  grid-template-rows: 1fr auto;
 }
 .webcam-modal[hidden] { display: none; }
-.webcam-modal__inner {
-  position: relative;
-  width: min(560px, 100%);
-  background: linear-gradient(180deg, #1a1612 0%, #0d0b08 100%);
-  border: 2px solid #ffd870;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 40px rgba(255, 216, 112, 0.18);
-  padding: var(--sp-5) var(--sp-5) var(--sp-4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-4);
-}
-.webcam-modal__title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.15rem;
-  text-transform: uppercase;
-  color: #ffe4a0;
-  letter-spacing: 0;
-  text-align: center;
-}
-.webcam-modal__title small {
-  display: block;
-  font-family: var(--font-utility);
-  font-weight: 500;
-  font-size: 0.7rem;
-  color: #ad8a40;
-  margin-top: 4px;
-  letter-spacing: 0;
-}
-.webcam-modal__stage {
-  position: relative;
-  width: 100%;
+
+.webcam-stage {
+  width: min(70vw, 70vh * 4 / 3);
   aspect-ratio: 4 / 3;
+  position: relative;
   background: #000;
-  border: 1px solid rgba(255, 216, 112, 0.35);
+  border-radius: 6vmin;          /* very rounded — old TV corners */
   overflow: hidden;
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.8),
+    0 0 80px rgba(255, 220, 120, 0.06);
+  align-self: end;
+  justify-self: center;
 }
-.webcam-modal__video,
-.webcam-modal__canvas {
+.webcam-stage__video,
+.webcam-stage__canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: inherit;
 }
+
+/* Subtle scanline + vignette overlay so the camera reads as a CRT preview */
+.webcam-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.5) 100%),
+    repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 3px);
+  border-radius: inherit;
+}
+
 .webcam-modal__error {
   font-family: var(--font-utility);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #ff8080;
   text-align: center;
   text-transform: uppercase;
-  font-weight: 600;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9);
+  margin-top: var(--sp-3);
 }
-.webcam-modal__controls {
+
+.webcam-controls {
   display: flex;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+}
+
+/* Big round shutter — looks like a camera button */
+.shutter {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 4px solid #fff8e0;
+  background:
+    radial-gradient(circle at 35% 30%, #ff7070 0%, #c81818 60%, #6a0808 100%);
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  box-shadow:
+    inset 0 -4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 3px 6px rgba(255, 200, 200, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(232, 80, 80, 0.4);
+  transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
+}
+.shutter:hover {
+  transform: scale(1.05);
+  box-shadow:
+    inset 0 -4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 3px 6px rgba(255, 200, 200, 0.3),
+    0 8px 22px rgba(0, 0, 0, 0.65),
+    0 0 36px rgba(232, 80, 80, 0.5);
+}
+.shutter:active {
+  transform: scale(0.95);
+}
+.shutter[hidden] { display: none; }
+
+.shutter__label {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-utility);
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: rgba(255, 248, 224, 0.7);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+.webcam-close {
+  position: fixed;
+  top: 24px;
+  right: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 248, 224, 0.1);
+  border: 1.5px solid rgba(255, 248, 224, 0.3);
+  color: #fff8e0;
+  font-size: 1.4rem;
+  font-weight: 300;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+.webcam-close:hover {
+  background: rgba(255, 248, 224, 0.18);
+  border-color: rgba(255, 248, 224, 0.55);
+}
+
+/* ========================================================
+   Tuner knob — round rotating station-tuning dial on the right
+   Replaces the bottom keyboard-key submit on broadcast forms
+   ======================================================== */
+.tuner-knob {
+  position: fixed;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.tuner-knob__label {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: #fff8e0;
+  letter-spacing: 0.04em;
+  text-shadow:
+    -1px 0 rgba(0, 0, 0, 0.9),
+    1px 0 rgba(0, 0, 0, 0.9),
+    0 -1px rgba(0, 0, 0, 0.9),
+    0 1px rgba(0, 0, 0, 0.9),
+    0 0 14px rgba(255, 220, 120, 0.4);
+}
+.tuner-knob__dial {
+  pointer-events: auto;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  background:
+    radial-gradient(circle at 35% 28%, #5a5450 0%, #2e2925 50%, #110f0c 100%);
+  box-shadow:
+    inset 0 -4px 8px rgba(0, 0, 0, 0.7),
+    inset 0 3px 6px rgba(255, 240, 200, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.7),
+    0 0 30px rgba(255, 220, 120, 0.15);
+  position: relative;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+.tuner-knob__dial:hover {
+  box-shadow:
+    inset 0 -4px 8px rgba(0, 0, 0, 0.7),
+    inset 0 3px 6px rgba(255, 240, 200, 0.25),
+    0 10px 30px rgba(0, 0, 0, 0.75),
+    0 0 40px rgba(255, 220, 120, 0.3);
+}
+.tuner-knob.is-active .tuner-knob__dial {
+  transform: rotate(290deg);
+}
+.tuner-knob.is-locked .tuner-knob__dial {
+  transform: rotate(290deg);
+  cursor: default;
+}
+.tuner-knob__dial:disabled,
+.tuner-knob.is-disabled .tuner-knob__dial {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* Pointer notch */
+.tuner-knob__indicator {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 24px;
+  background: #ffd870;
+  box-shadow: 0 0 10px rgba(255, 216, 112, 0.8);
+  border-radius: 2px;
+}
+
+/* Hub center — the inner cap */
+.tuner-knob__hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #6a625a 0%, #1a1612 100%);
+  box-shadow:
+    inset 0 -2px 4px rgba(0, 0, 0, 0.6),
+    inset 0 1px 2px rgba(255, 240, 200, 0.2);
+}
+
+.tuner-knob__caption {
+  font-family: var(--font-utility);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: rgba(255, 248, 224, 0.75);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  text-align: center;
+  max-width: 150px;
+  line-height: 1.3;
+}
+
+/* On narrower viewports the knob would overlap the form — hide it and
+   the page can fall back to an inline submit if needed. */
+@media (max-width: 1100px) {
+  .tuner-knob { display: none; }
+}
+
+/* ========================================================
+   Mobile block — desktop-only experience
+   ======================================================== */
+.mobile-block { display: none; }
+@media (max-width: 768px) {
+  .mobile-block {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    background: #000;
+    color: #fff8e0;
+    text-align: center;
+    padding: var(--sp-7) var(--sp-5);
+  }
+  .mobile-block__inner { max-width: 360px; }
+  .mobile-block__title {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    color: #fff8e0;
+    letter-spacing: 0.02em;
+    margin-bottom: var(--sp-4);
+    text-shadow: 0 0 20px rgba(255, 100, 100, 0.4);
+  }
+  .mobile-block__body {
+    font-family: var(--font-utility);
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
+    line-height: 1.4;
+    color: #ffe4a0;
+    margin-bottom: var(--sp-6);
+  }
+  .mobile-block__small {
+    font-family: var(--font-utility);
+    font-size: 0.7rem;
+    color: #ad8a40;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
 }
 
 /* Footer marquee — Capitol propaganda ticker */
@@ -884,15 +1107,18 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 
 .rsvp-label {
   font-family: var(--font-utility);
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0;
-  color: #ffe4a0;
+  letter-spacing: 0.02em;
+  color: #fff8e0;
+  /* Heavy outline so cream pops off the bright blue screen */
   text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.85),
-    0 2px 6px rgba(0, 0, 0, 0.55),
-    0 0 12px rgba(255, 200, 100, 0.18);
+    -1px 0 rgba(0, 0, 0, 0.9),
+    1px 0 rgba(0, 0, 0, 0.9),
+    0 -1px rgba(0, 0, 0, 0.9),
+    0 1px rgba(0, 0, 0, 0.9),
+    0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .rsvp-form input[type="text"],
@@ -985,16 +1211,19 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 
 .rsvp-fineprint {
   font-family: var(--font-utility);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0;
-  color: #ffd870;
+  letter-spacing: 0.02em;
+  color: #fff8e0;
   text-align: center;
   margin-top: var(--sp-3);
   text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.85),
-    0 2px 6px rgba(0, 0, 0, 0.55);
+    -1px 0 rgba(0, 0, 0, 0.9),
+    1px 0 rgba(0, 0, 0, 0.9),
+    0 -1px rgba(0, 0, 0, 0.9),
+    0 1px rgba(0, 0, 0, 0.9),
+    0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .rsvp-confirmation {

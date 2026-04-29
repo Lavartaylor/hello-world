@@ -1,4 +1,4 @@
-import { clickKey, dingBell } from "./audio.js";
+import { clickKey, dingBell } from "/scripts/audio.js";
 
 // Type a string into a target element, character by character,
 // with random per-keystroke jitter so it doesn't feel mechanical.
@@ -15,7 +15,12 @@ export function typeInto(el, text, opts = {}) {
   const sentencePause = opts.sentencePause ?? 600;
   const clicks = opts.clicks ?? true;
   const ding = opts.ding ?? true;
-  const onDone = opts.onDone;
+  const endDing = opts.endDing ?? true;       // beep when the whole block finishes
+  const userOnDone = opts.onDone;
+  const onDone = () => {
+    if (endDing) dingBell({ volume: 0.08 });
+    if (userOnDone) userOnDone();
+  };
 
   el.innerHTML = "";
 

@@ -14,6 +14,14 @@
 </head>
 <body class="broadcast" data-role="capitol">
 
+  <div class="mobile-block">
+    <div class="mobile-block__inner">
+      <div class="mobile-block__title">Signal Unavailable</div>
+      <p class="mobile-block__body">This terminal is not authorized for handheld access. Please return on a desktop computer.</p>
+      <p class="mobile-block__small">— Panem Capitol Broadcast —</p>
+    </div>
+  </div>
+
   <div class="crt">
     <div class="crt__scrim"></div>
     <div class="crt__static"></div>
@@ -94,13 +102,6 @@
         <div id="companion-fields" class="rsvp-companions" hidden></div>
 
         <p class="rsvp-fineprint">All declarations are recorded. Failure to respond constitutes treason.</p>
-
-        <div class="key-row" style="grid-column: 1 / -1;">
-          <button type="submit" class="key" id="submit-key">
-            Transmit to Capitol
-            <span class="key__caption">press to confirm declaration</span>
-          </button>
-        </div>
       </form>
 
       <div class="rsvp-confirmation" id="confirmation" hidden>
@@ -120,25 +121,36 @@
     </footer>
   </div>
 
-  <!-- Webcam capture modal -->
+  <!-- Tuner knob — submit lives on the right side now -->
+  <div class="tuner-knob is-disabled" id="tuner" hidden>
+    <div class="tuner-knob__label">Transmit</div>
+    <button type="submit" form="rsvp-form" class="tuner-knob__dial" id="tuner-dial" disabled>
+      <div class="tuner-knob__indicator"></div>
+      <div class="tuner-knob__hub"></div>
+    </button>
+    <div class="tuner-knob__caption" id="tuner-caption">Complete the form to enable</div>
+  </div>
+
+  <!-- Webcam capture modal — naked CRT with a single shutter -->
   <div class="webcam-modal" id="webcam-modal" hidden>
-    <div class="webcam-modal__inner">
-      <div class="webcam-modal__title">
-        Capitol Portrait Capture
-        <small>Submit a likeness for the Gamemakers' records</small>
-      </div>
-      <div class="webcam-modal__stage" id="webcam-stage">
-        <video class="webcam-modal__video" id="webcam-video" autoplay playsinline muted></video>
-        <canvas class="webcam-modal__canvas" id="webcam-canvas" hidden></canvas>
-      </div>
-      <div class="webcam-modal__error" id="webcam-error" hidden></div>
-      <div class="webcam-modal__controls">
-        <button type="button" class="key key--small" id="webcam-cancel">Cancel</button>
-        <button type="button" class="key key--small" id="webcam-capture">Capture</button>
-        <button type="button" class="key key--small" id="webcam-retake" hidden>Retake</button>
-        <button type="button" class="key key--small" id="webcam-use" hidden>Use this portrait</button>
-      </div>
+    <button type="button" class="webcam-close" id="webcam-cancel" aria-label="Close camera">×</button>
+
+    <div class="webcam-stage">
+      <video class="webcam-stage__video" id="webcam-video" autoplay playsinline muted></video>
+      <canvas class="webcam-stage__canvas" id="webcam-canvas" hidden></canvas>
     </div>
+
+    <div class="webcam-controls">
+      <button type="button" class="shutter" id="webcam-capture" aria-label="Capture portrait">
+        <span class="shutter__label">Capture</span>
+      </button>
+      <button type="button" class="shutter" id="webcam-use" hidden style="background:radial-gradient(circle at 35% 30%, #86e870 0%, #2a8418 60%, #0a3a08 100%);" aria-label="Use this portrait">
+        <span class="shutter__label">Use</span>
+      </button>
+      <button type="button" class="key key--small" id="webcam-retake" hidden>Retake</button>
+    </div>
+
+    <div class="webcam-modal__error" id="webcam-error" hidden></div>
   </div>
 
   <script type="module">
@@ -173,7 +185,6 @@
       await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
         speed: 95, jitter: 30, ding: false, clicks: false, onDone: r
       }));
-      dingBell();
       await wait(500);
 
       await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  CITIZEN CENSUS", {
@@ -191,6 +202,9 @@
       const form = document.getElementById("rsvp-form");
       form.hidden = false;
       form.classList.add("is-ready");
+      const tuner = document.getElementById("tuner");
+      tuner.hidden = false;
+      validateForm();
     }
 
     // ---- Companion fields ---------------------------------------------
@@ -209,7 +223,22 @@
         `;
         companionsWrap.appendChild(label);
       }
+      validateForm();
     });
+
+    // ---- Tuner-knob enable state -------------------------------------
+    function validateForm() {
+      const form = document.getElementById("rsvp-form");
+      const tuner = document.getElementById("tuner");
+      const dial = document.getElementById("tuner-dial");
+      const caption = document.getElementById("tuner-caption");
+      const isValid = form.checkValidity();
+      tuner.classList.toggle("is-disabled", !isValid);
+      dial.disabled = !isValid;
+      caption.textContent = isValid ? "Turn to transmit" : "Complete the form to enable";
+    }
+    document.getElementById("rsvp-form").addEventListener("input", validateForm);
+    document.getElementById("rsvp-form").addEventListener("change", validateForm);
 
     // ---- Webcam capture -----------------------------------------------
     const modal = document.getElementById("webcam-modal");
@@ -248,8 +277,8 @@
       } catch (err) {
         console.error(err);
         setError(err.name === "NotAllowedError"
-          ? "Camera permission denied. Capitol cannot record portrait."
-          : "No camera detected on this terminal.");
+          ? "Camera permission denied"
+          : "No camera detected");
       }
     }
 
@@ -268,7 +297,6 @@
     btnCapture.addEventListener("click", () => {
       const w = video.videoWidth || 720;
       const h = video.videoHeight || 540;
-      // Square crop centered for clean portrait
       const size = Math.min(w, h);
       canvas.width = size;
       canvas.height = size;
@@ -309,7 +337,7 @@
       photoClearBtn.hidden = true;
     });
 
-    // ---- Form submit --------------------------------------------------
+    // ---- Form submit (triggered by tuner knob) ------------------------
     document.getElementById("rsvp-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
@@ -326,9 +354,12 @@
         localStorage.setItem("capitol_rsvp_log", JSON.stringify(log));
       } catch {}
 
-      const submitKey = document.getElementById("submit-key");
-      submitKey.disabled = true;
-      submitKey.querySelector(".key__caption").textContent = "transmitting…";
+      const tuner = document.getElementById("tuner");
+      const dial = document.getElementById("tuner-dial");
+      const caption = document.getElementById("tuner-caption");
+      tuner.classList.add("is-active");
+      dial.disabled = true;
+      caption.textContent = "Transmitting…";
 
       try {
         await submitRsvp({
@@ -339,12 +370,16 @@
           contact: data.contact || null,
           profile_photo: data.profile_photo || null
         });
+        tuner.classList.add("is-locked");
+        caption.textContent = "Transmission received";
         e.target.hidden = true;
         document.getElementById("confirmation").hidden = false;
       } catch (err) {
         console.error("RSVP submission failed:", err);
-        submitKey.disabled = false;
-        submitKey.querySelector(".key__caption").textContent = "transmission failed — try again";
+        tuner.classList.remove("is-active");
+        dial.disabled = false;
+        const detail = (err && err.message) ? err.message : "unknown error";
+        caption.textContent = `Failed: ${detail.slice(0, 40)} — try again`;
       }
     });
 

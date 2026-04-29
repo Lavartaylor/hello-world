@@ -14,6 +14,14 @@
 </head>
 <body class="broadcast" data-role="capitol">
 
+  <div class="mobile-block">
+    <div class="mobile-block__inner">
+      <div class="mobile-block__title">Signal Unavailable</div>
+      <p class="mobile-block__body">This terminal is not authorized for handheld access. Please return on a desktop computer.</p>
+      <p class="mobile-block__small">— Panem Capitol Broadcast —</p>
+    </div>
+  </div>
+
   <div class="crt">
     <div class="crt__scrim"></div>
     <div class="crt__static"></div>
@@ -137,7 +145,6 @@
       await new Promise(r => typeInto(heading, "OPENING BET", {
         speed: 95, jitter: 30, ding: false, clicks: false, onDone: r
       }));
-      dingBell();
       await wait(400);
 
       await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  WAGER REGISTRATION", {

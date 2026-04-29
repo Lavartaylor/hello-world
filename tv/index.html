@@ -14,6 +14,14 @@
 </head>
 <body class="broadcast" data-role="capitol">
 
+  <div class="mobile-block">
+    <div class="mobile-block__inner">
+      <div class="mobile-block__title">Signal Unavailable</div>
+      <p class="mobile-block__body">This terminal is not authorized for handheld access. Please return on a desktop computer.</p>
+      <p class="mobile-block__small">— Panem Capitol Broadcast —</p>
+    </div>
+  </div>
+
   <div class="crt">
     <div class="crt__scrim"></div>
     <div class="crt__static"></div>
@@ -152,7 +160,6 @@
       await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
         speed: 95, jitter: 30, ding: false, clicks: false, onDone: r
       }));
-      dingBell();
       await wait(500);
 
       await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  REAPING NOTICE", {
@@ -172,7 +179,6 @@
         speed: 180, jitter: 60, sentencePause: 0, clicks: false, ding: false, onDone: r
       }));
       jitterChars(nameLine, { maxRot: 4, maxShift: 1.8, maxScale: 0.05 });
-      dingBell();
       await wait(700);
 
       districtNum.textContent = String(tribute.district);
