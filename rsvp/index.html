@@ -11,12 +11,6 @@
   <link rel="stylesheet" href="/styles/reset.css">
   <link rel="stylesheet" href="/styles/tokens.css">
   <link rel="stylesheet" href="/styles/components.css">
-  <style>
-    /* RSVP page lets content breathe vertically — body height instead of fixed viewport */
-    body.broadcast { overflow-y: auto; height: auto; min-height: 100vh; }
-    .broadcast-layout { height: auto; min-height: 100vh; }
-    .broadcast-main { padding: var(--sp-7) 0; }
-  </style>
 </head>
 <body class="broadcast" data-role="capitol">
 
@@ -55,18 +49,6 @@
           <input type="text" name="name" required autocomplete="name" placeholder="As recorded by the Capitol">
         </label>
 
-        <fieldset class="rsvp-field rsvp-field--choice">
-          <legend class="rsvp-label">Declaration of attendance</legend>
-          <label class="rsvp-radio">
-            <input type="radio" name="attending" value="yes" required>
-            <span>I will attend the reaping</span>
-          </label>
-          <label class="rsvp-radio">
-            <input type="radio" name="attending" value="no">
-            <span>I decline. Long live Panem.</span>
-          </label>
-        </fieldset>
-
         <label class="rsvp-field">
           <span class="rsvp-label">Traveling companions</span>
           <select name="companion_count" id="companion-count">
@@ -79,12 +61,26 @@
           </select>
         </label>
 
-        <div id="companion-fields" class="rsvp-companions" hidden></div>
+        <fieldset class="rsvp-field rsvp-field--choice">
+          <legend class="rsvp-label">Declaration of attendance</legend>
+          <div class="rsvp-radios">
+            <label class="rsvp-radio">
+              <input type="radio" name="attending" value="yes" required>
+              <span>I will attend the reaping</span>
+            </label>
+            <label class="rsvp-radio">
+              <input type="radio" name="attending" value="no">
+              <span>I decline. Long live Panem.</span>
+            </label>
+          </div>
+        </fieldset>
 
-        <label class="rsvp-field">
+        <label class="rsvp-field rsvp-field--full">
           <span class="rsvp-label">Address of record (optional)</span>
           <input type="text" name="contact" placeholder="Phone or email — for invitation delivery">
         </label>
+
+        <div id="companion-fields" class="rsvp-companions" hidden></div>
 
         <p class="rsvp-fineprint">All declarations are recorded. Failure to respond constitutes treason.</p>
       </form>

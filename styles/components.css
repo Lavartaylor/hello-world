@@ -531,12 +531,11 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 .broadcast-body {
   font-family: var(--font-utility);
   font-weight: 500;
-  font-size: clamp(1.25rem, 2.2vw, 1.85rem);
-  line-height: 1.4;
+  font-size: clamp(1.05rem, 1.7vw, 1.55rem);
+  line-height: 1.35;
   color: #fff8e0;
-  max-width: 28ch;
-  margin: 0 auto var(--sp-6);
-  min-height: 6em;
+  max-width: 56ch;
+  margin: 0 auto var(--sp-5);
   text-transform: uppercase;
   white-space: pre-wrap;
 }
@@ -695,16 +694,32 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
    RSVP form — broadcast styling, sits inside .broadcast-main
    ======================================================== */
 .rsvp-form {
-  margin-top: var(--sp-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-5);
+  margin-top: var(--sp-4);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3) var(--sp-6);
   width: 100%;
-  max-width: 520px;
+  max-width: 820px;
   opacity: 0;
   transform: translateY(8px);
   transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
   text-align: left;
+}
+.rsvp-form .rsvp-field--full,
+.rsvp-form .rsvp-companions,
+.rsvp-form .rsvp-fineprint {
+  grid-column: 1 / -1;
+}
+.rsvp-form .rsvp-field--choice {
+  grid-column: 1 / -1;
+}
+.rsvp-form .rsvp-field--choice .rsvp-radio + .rsvp-radio {
+  margin-top: 0;
+}
+.rsvp-form .rsvp-field--choice .rsvp-radios {
+  display: flex;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
 }
 .rsvp-form.is-ready {
   opacity: 1;
