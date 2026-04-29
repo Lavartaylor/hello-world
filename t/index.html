@@ -11,83 +11,61 @@
   <link rel="stylesheet" href="/styles/reset.css">
   <link rel="stylesheet" href="/styles/tokens.css">
   <link rel="stylesheet" href="/styles/components.css">
-  <style>
-    /* Cover (closed-letter) content */
-    .letter__cover {
-      text-align: center;
-      padding: var(--sp-5) 0 var(--sp-3);
-      transition: opacity var(--dur-med) var(--ease-out);
-    }
-    .letter__cover-line {
-      font-family: var(--font-artifact);
-      font-style: italic;
-      font-size: var(--fs-md);
-      color: #3a2510;
-      margin: 0 0 var(--sp-3);
-      letter-spacing: 0.02em;
-    }
-    .letter__cover-line--small {
-      font-family: var(--font-utility);
-      font-style: normal;
-      text-transform: uppercase;
-      font-size: var(--fs-xs);
-      color: #5a3a18;
-      letter-spacing: 0;
-      font-weight: 500;
-    }
-    .letter.is-open .letter__cover { opacity: 0; pointer-events: none; }
-  </style>
+
+  <!-- Preload subsequent envelope frames so the cycle is jitter-free -->
+  <link rel="preload" as="image" href="/assets/envelope-2.png">
+  <link rel="preload" as="image" href="/assets/envelope-3.png">
+  <link rel="preload" as="image" href="/assets/envelope-4.png">
+  <link rel="preload" as="image" href="/assets/envelope-5.png">
+  <link rel="preload" as="image" href="/assets/envelope-6.png">
 </head>
 <body data-role="tribute">
 
   <main class="stage">
+    <div class="reaping-stage" id="reaping-stage">
+      <img class="envelope"
+           id="envelope"
+           src="/assets/envelope-1.png"
+           alt="Sealed Capitol envelope"
+           role="button"
+           tabindex="0"
+           aria-label="Tap to break the seal">
 
-    <!-- Folded sealed letter — tap anywhere to break the seal -->
-    <div class="letter" id="letter" role="button" tabindex="0" aria-label="Break the seal and open the reaping notice">
-      <div class="letter__paper">
-        <!-- Cover (visible while sealed) -->
-        <div class="letter__cover">
-          <p class="letter__cover-line">For the eyes of the named recipient.</p>
-          <p class="letter__cover-line letter__cover-line--small">Tampering will be reported to the Peacekeepers.</p>
-        </div>
-        <p class="letter__cover-hint">— tap to break the seal —</p>
+      <p class="envelope-hint" id="envelope-hint">— tap to break the seal —</p>
 
-        <!-- Inside (revealed on open) -->
-        <div class="letter__inside">
-          <article class="artifact" id="artifact">
-            <div class="artifact__seal" id="seal-slot">
-              <!-- District seal injected here -->
-            </div>
-            <h1 class="artifact__heading" id="heading"></h1>
-            <p class="artifact__subheading" id="subheading"></p>
-            <div class="artifact__body" id="body"></div>
-            <div id="reveal-slot" hidden>
-              <span class="artifact__name" id="name-line"></span>
-              <span class="artifact__district" id="district-line">
-                <small>OF DISTRICT</small>
-                <span id="district-num"></span>
-              </span>
-              <div class="artifact__signoff" id="signoff"></div>
-            </div>
-            <div style="text-align:center">
-              <button class="continue" id="continue" type="button">Acknowledge ▸</button>
-            </div>
-          </article>
-        </div>
+      <div class="letter-paper" id="letter-paper" hidden>
+        <article class="artifact" id="artifact">
+          <div class="artifact__seal" id="seal-slot">
+            <!-- District seal injected here -->
+          </div>
+          <h1 class="artifact__heading" id="heading"></h1>
+          <p class="artifact__subheading" id="subheading"></p>
+          <div class="artifact__body" id="body"></div>
+          <div id="reveal-slot" hidden>
+            <span class="artifact__name" id="name-line"></span>
+            <span class="artifact__district" id="district-line">
+              <small>OF DISTRICT</small>
+              <span id="district-num"></span>
+            </span>
+            <div class="artifact__signoff" id="signoff"></div>
+          </div>
+          <div style="text-align:center">
+            <button class="continue" id="continue" type="button">Acknowledge</button>
+          </div>
+        </article>
       </div>
-
-      <!-- Wax seal pinned over the fold -->
-      <div class="letter__seal letter__seal--placeholder" id="wax-seal" aria-hidden="true">C</div>
     </div>
 
     <!-- Lost-tribute fallback -->
-    <article class="artifact" id="not-found" hidden>
-      <h1 class="artifact__heading">Unrecognized Identifier</h1>
-      <p class="artifact__subheading">This terminal does not match Capitol records.</p>
-      <div class="artifact__body" style="text-align:center">
-        <p>If you believe this is an error, present yourself to the Gamemakers.</p>
-      </div>
-    </article>
+    <div class="letter-paper" id="not-found" hidden style="opacity:1; transform:none; visibility:visible; pointer-events:auto;">
+      <article class="artifact">
+        <h1 class="artifact__heading">Unrecognized Identifier</h1>
+        <p class="artifact__subheading">This terminal does not match Capitol records.</p>
+        <div class="artifact__body" style="text-align:center">
+          <p>If you believe this is an error, present yourself to the Gamemakers.</p>
+        </div>
+      </article>
+    </div>
   </main>
 
   <script type="module">
@@ -96,6 +74,7 @@
     import { jitterChars } from "/scripts/jitter.js";
     import { loadTributes, getSlug, findTribute, districtName } from "/scripts/data.js";
 
+    const FRAME_INTERVAL_MS = 95;
     const DISTRICT_SEAL_URL = (n) => `/assets/seals/district-${n}.svg`;
 
     async function fetchInlineSVG(url) {
@@ -105,61 +84,69 @@
         return await res.text();
       } catch { return null; }
     }
-
     async function injectSVG(target, url) {
       const svg = await fetchInlineSVG(url);
       if (svg) target.innerHTML = svg;
     }
-
     function ordinal(n) {
       const s = ["th","st","nd","rd"], v = n % 100;
       return n + (s[(v-20)%10] || s[v] || s[0]);
     }
-
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    const stage = document.getElementById("reaping-stage");
+    const envelope = document.getElementById("envelope");
+    const letterPaper = document.getElementById("letter-paper");
 
     async function run() {
       const data = await loadTributes();
       const slug = getSlug();
       const tribute = findTribute(data, slug);
-      const letterEl = document.getElementById("letter");
-      const notFoundEl = document.getElementById("not-found");
 
       if (!tribute) {
-        letterEl.style.display = "none";
-        notFoundEl.hidden = false;
+        stage.style.display = "none";
+        document.getElementById("not-found").hidden = false;
         return;
       }
-
-      // Theme
       document.body.dataset.role = tribute.role || "tribute";
 
-      // Detect a real wax-seal PNG; otherwise keep the CSS placeholder
-      try {
-        const res = await fetch("/assets/wax-seal.png", { method: "HEAD" });
-        if (res.ok) {
-          const seal = document.getElementById("wax-seal");
-          seal.classList.add("letter__seal--png");
-          seal.classList.remove("letter__seal--placeholder");
-          seal.textContent = "";
-        }
-      } catch {}
-
-      // Tap to break the seal
       const open = () => {
+        if (stage.classList.contains("is-cycling")) return;
         unlockAudio();
-        letterEl.classList.add("is-open");
-        // The bottom flap "drops down" — wait for that motion before typing
-        setTimeout(() => startSequence(tribute, data), 1100);
+        runOpenSequence(tribute, data).catch(console.error);
       };
-      letterEl.addEventListener("click", open, { once: true });
-      letterEl.addEventListener("keydown", e => {
+      envelope.addEventListener("click", open, { once: true });
+      envelope.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
       }, { once: true });
     }
 
+    async function runOpenSequence(tribute, data) {
+      stage.classList.add("is-cycling");
+
+      // Cycle frames 1 → 6 (we're already on frame 1)
+      for (let i = 2; i <= 6; i++) {
+        await wait(FRAME_INTERVAL_MS);
+        envelope.src = `/assets/envelope-${i}.png`;
+        if (i === 2) dingBell(); // soft cue when seal cracks
+      }
+
+      // Hold briefly on the fully open envelope
+      await wait(280);
+
+      // Reveal the paper — display it, then trigger the fade-in on next frame
+      letterPaper.hidden = false;
+      await wait(20);
+      stage.classList.add("is-open");
+
+      // Wait for paper to settle in
+      await wait(900);
+
+      // Start typewriter
+      await startSequence(tribute, data);
+    }
+
     async function startSequence(tribute, data) {
-      // District seal at the top of the opened letter
       const districtSealUrl = DISTRICT_SEAL_URL(tribute.district);
       injectSVG(document.getElementById("seal-slot"), districtSealUrl);
 
@@ -210,14 +197,12 @@
       await wait(400);
       cont.classList.add("is-ready");
       cont.setAttribute("aria-label", "Acknowledge the reaping");
-      cont.addEventListener("click", () => {
-        cont.disabled = true;
-      });
+      cont.addEventListener("click", () => { cont.disabled = true; });
     }
 
     run().catch(err => {
       console.error(err);
-      document.getElementById("letter").style.display = "none";
+      stage.style.display = "none";
       document.getElementById("not-found").hidden = false;
     });
   </script>
