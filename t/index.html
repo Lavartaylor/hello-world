@@ -134,21 +134,21 @@
 
       // 1. Heading types in
       await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
-        speed: 50, jitter: 18, ding: false, onDone: r
+        speed: 95, jitter: 30, ding: false, onDone: r
       }));
       dingBell();
-      await wait(400);
+      await wait(500);
 
       // 2. Subheading
       await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  REAPING NOTICE", {
-        speed: 26, jitter: 14, ding: false, onDone: r
+        speed: 60, jitter: 25, ding: false, onDone: r
       }));
-      await wait(700);
+      await wait(800);
 
       // 3. Body — the proclamation
       const body1 = `By edict of the Gamemakers, and in accordance with the Treaty of the Treason, the following citizen has been selected to represent their district in the [d]${ordinal(75)}[/d] Annual Hunger Games:`;
       await new Promise(r => typeInto(body, body1, {
-        speed: 22, jitter: 16, sentencePause: 320, onDone: r
+        speed: 55, jitter: 28, sentencePause: 450, onDone: r
       }));
       await wait(900);
 
@@ -156,7 +156,7 @@
       reveal.hidden = false;
       nameLine.textContent = "";
       await new Promise(r => typeInto(nameLine, tribute.name.toUpperCase(), {
-        speed: 110, jitter: 40, sentencePause: 0, onDone: r
+        speed: 180, jitter: 60, sentencePause: 0, onDone: r
       }));
       // Apply hand-jitter to the typed name letters
       jitterChars(nameLine, { maxRot: 4, maxShift: 1.8, maxScale: 0.05 });
@@ -171,7 +171,7 @@
       // 6. Sign-off
       const sig = `\nMay the odds be ever in your favor.\n— The Gamemakers`;
       await new Promise(r => typeInto(signoff, sig, {
-        speed: 30, jitter: 14, ding: false, onDone: r
+        speed: 70, jitter: 28, ding: false, onDone: r
       }));
 
       // 7. Continue button

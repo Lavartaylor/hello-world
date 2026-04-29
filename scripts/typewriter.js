@@ -9,18 +9,15 @@ import { clickKey, dingBell } from "./audio.js";
 // Anything not bracketed types as plain text.
 
 export function typeInto(el, text, opts = {}) {
-  const baseSpeed = opts.speed ?? 38;          // ms per char baseline
-  const jitter = opts.jitter ?? 28;            // +/- ms variance
-  const punctuationPause = opts.punctPause ?? 220;
-  const sentencePause = opts.sentencePause ?? 480;
+  const baseSpeed = opts.speed ?? 75;          // ms per char baseline
+  const jitter = opts.jitter ?? 35;            // +/- ms variance
+  const punctuationPause = opts.punctPause ?? 280;
+  const sentencePause = opts.sentencePause ?? 600;
   const clicks = opts.clicks ?? true;
   const ding = opts.ding ?? true;
   const onDone = opts.onDone;
 
   el.innerHTML = "";
-  const cursor = document.createElement("span");
-  cursor.className = "tw-cursor";
-  el.appendChild(cursor);
 
   // Tokenize: array of {kind: "text"|"open"|"close", value}
   const tokens = tokenize(text);
@@ -31,8 +28,7 @@ export function typeInto(el, text, opts = {}) {
   function topNode() { return stack[stack.length - 1]; }
 
   function appendText(ch) {
-    const target = topNode();
-    target.insertBefore(document.createTextNode(ch), target === el ? cursor : null);
+    topNode().appendChild(document.createTextNode(ch));
   }
 
   function step() {
@@ -46,8 +42,7 @@ export function typeInto(el, text, opts = {}) {
     if (tok.kind === "open") {
       const span = document.createElement("span");
       span.className = tok.value;
-      const target = topNode();
-      target.insertBefore(span, target === el ? cursor : null);
+      topNode().appendChild(span);
       stack.push(span);
       step();
       return;
@@ -69,8 +64,7 @@ export function typeInto(el, text, opts = {}) {
       if (j >= str.length) { after(); return; }
       const ch = str[j++];
       if (ch === "\n") {
-        const target = topNode();
-        target.insertBefore(document.createElement("br"), target === el ? cursor : null);
+        topNode().appendChild(document.createElement("br"));
         if (ding) dingBell();
         setTimeout(next, baseSpeed * 4);
         return;
@@ -90,7 +84,6 @@ export function typeInto(el, text, opts = {}) {
   return {
     cancel() {
       cancelled = true;
-      cursor.remove();
     },
     skip() {
       cancelled = true;

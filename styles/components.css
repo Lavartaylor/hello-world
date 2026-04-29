@@ -32,22 +32,6 @@ body::before {
   z-index: 8999;
 }
 
-/* Typewriter cursor */
-.tw-cursor {
-  display: inline-block;
-  width: 0.6ch;
-  background: currentColor;
-  animation: tw-blink 0.9s steps(2, end) infinite;
-  margin-left: 1px;
-  vertical-align: baseline;
-  height: 1em;
-  transform: translateY(0.15em);
-}
-@keyframes tw-blink {
-  0%, 50% { opacity: 1; }
-  50.01%, 100% { opacity: 0; }
-}
-
 /* Tap-to-begin gate */
 .gate {
   position: fixed;
