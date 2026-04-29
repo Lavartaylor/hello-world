@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Leaderboard — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    /* Leaderboard scrolls inside its own container if it gets long */
+    body.broadcast { overflow: hidden; }
+    .broadcast-main { overflow-y: auto; padding-right: 8px; }
+  </style>
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="mobile-block">
+    <div class="mobile-block__inner">
+      <div class="mobile-block__title">Signal Unavailable</div>
+      <p class="mobile-block__body">This terminal is not authorized for handheld access. Please return on a desktop computer.</p>
+      <p class="mobile-block__small">— Panem Capitol Broadcast —</p>
+    </div>
+  </div>
+
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
+      <div class="broadcast-hud">
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Channel</span>
+          <span class="broadcast-hud__value">LIVE STANDINGS</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <h1 class="screen-form__title" id="lb-title">75th Annual Hunger Games — Leaderboard</h1>
+      <p class="screen-form__subtitle" id="lb-subtitle">Loading transmission…</p>
+
+      <div class="leaderboard" id="leaderboard"></div>
+    </main>
+
+    <footer class="broadcast-footer">
+      <div class="broadcast-marquee">
+        <span>● 75TH ANNUAL HUNGER GAMES — LIVE STANDINGS — TOP 10 ENTER THE ARENA — LONG LIVE PANEM</span>
+        <span>● 75TH ANNUAL HUNGER GAMES — LIVE STANDINGS — TOP 10 ENTER THE ARENA — LONG LIVE PANEM</span>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { unlockAudio, startHiss } from "/scripts/audio.js";
+    import { fetchTributes } from "/scripts/supabase.js";
+
+    // The Reaping Line — top 10 are Tributes after Week 3 freeze.
+    const FREEZE_RANK = 10;
+
+    function districtName(n) {
+      const map = { 1:"Luxury", 2:"Masonry", 3:"Technology", 4:"Fishing", 5:"Power",
+        6:"Transportation", 7:"Lumber", 8:"Textiles", 9:"Grain", 10:"Livestock",
+        11:"Agriculture", 12:"Mining", 13:"Graphite" };
+      return map[n] || "—";
+    }
+
+    function row(t, rank, freeze) {
+      const district = String(t.district).padStart(2, "0");
+      const seal = `<img src="/assets/seals/district-${t.district}.png" alt="">`;
+      const below = rank > freeze ? "leaderboard__row--below" : "";
+      return `
+        <div class="leaderboard__row ${below}">
+          <div class="leaderboard__rank">${rank}</div>
+          <div class="leaderboard__seal">${seal}</div>
+          <div class="leaderboard__id">
+            <span class="leaderboard__name">${t.name}</span>
+            <span class="leaderboard__district">District ${district} · ${districtName(t.district)}</span>
+          </div>
+          <div class="leaderboard__points">${(t.points ?? 0).toLocaleString()}<small>Points</small></div>
+        </div>
+      `;
+    }
+
+    async function run() {
+      const tributes = await fetchTributes();
+      const list = document.getElementById("leaderboard");
+      const subtitle = document.getElementById("lb-subtitle");
+
+      if (!tributes.length) {
+        subtitle.textContent = "No citizens registered.";
+        list.innerHTML = `<div class="shop-empty">Awaiting first transmission…</div>`;
+        return;
+      }
+
+      subtitle.textContent = `${tributes.length} citizens · top ${FREEZE_RANK} above the reaping line enter the arena`;
+
+      const html = [];
+      tributes.forEach((t, i) => {
+        const rank = i + 1;
+        if (rank === FREEZE_RANK + 1) {
+          html.push(`<div class="leaderboard__line">— THE REAPING LINE —</div>`);
+        }
+        html.push(row(t, rank, FREEZE_RANK));
+      });
+      list.innerHTML = html.join("");
+    }
+
+    // Tap-to-receive gate (audio policy)
+    const startBtn = document.createElement("div");
+    startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
+    startBtn.textContent = "▸ tap to tune in";
+    document.body.appendChild(startBtn);
+    startBtn.addEventListener("click", () => {
+      unlockAudio();
+      startHiss();
+      startBtn.style.transition = "opacity 0.4s";
+      startBtn.style.opacity = "0";
+      setTimeout(() => startBtn.remove(), 400);
+    }, { once: true });
+
+    run().catch(err => {
+      console.error(err);
+      document.getElementById("lb-subtitle").textContent = "Transmission error — check console.";
+    });
+  </script>
+</body>
+</html>

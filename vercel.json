@@ -6,7 +6,9 @@
     { "source": "/tv/:slug", "destination": "/tv" },
     { "source": "/tv/:slug/", "destination": "/tv" },
     { "source": "/vote/:slug", "destination": "/vote" },
-    { "source": "/vote/:slug/", "destination": "/vote" }
+    { "source": "/vote/:slug/", "destination": "/vote" },
+    { "source": "/shop/:slug", "destination": "/shop" },
+    { "source": "/shop/:slug/", "destination": "/shop" }
   ],
   "headers": [
     {

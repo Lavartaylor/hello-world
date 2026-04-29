@@ -60,9 +60,8 @@
     </div>
   </main>
   <script>
-    fetch("/assets/seals/capitol.svg")
-      .then(r => r.text())
-      .then(svg => { document.getElementById("seal").innerHTML = svg; });
+    document.getElementById("seal").innerHTML =
+      '<img src="/assets/seals/capitol.png" alt="" style="width:100%;height:100%;object-fit:contain;">';
   </script>
 </body>
 </html>

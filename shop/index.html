@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Capitol Marketplace — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    body.broadcast { overflow: hidden; }
+    .broadcast-main { overflow-y: auto; padding-right: 8px; }
+  </style>
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="mobile-block">
+    <div class="mobile-block__inner">
+      <div class="mobile-block__title">Signal Unavailable</div>
+      <p class="mobile-block__body">This terminal is not authorized for handheld access. Please return on a desktop computer.</p>
+      <p class="mobile-block__small">— Panem Capitol Broadcast —</p>
+    </div>
+  </div>
+
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
+      <div class="broadcast-hud" id="hud">
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+        <div class="broadcast-hud__row broadcast-hud__row--points">
+          <span class="broadcast-hud__label">Credits</span>
+          <span class="broadcast-hud__value" id="hud-credits">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <h1 class="screen-form__title">Capitol Marketplace</h1>
+      <p class="screen-form__subtitle" id="shop-subtitle">Spend credits on sponsorships or sabotage. Target any citizen.</p>
+
+      <div class="shop-grid" id="shop-grid"></div>
+    </main>
+
+    <footer class="broadcast-footer">
+      <div class="broadcast-marquee">
+        <span>● CAPITOL MARKETPLACE — SPONSOR. SABOTAGE. SPEND. — ALL TRANSACTIONS RECORDED — LONG LIVE PANEM</span>
+        <span>● CAPITOL MARKETPLACE — SPONSOR. SABOTAGE. SPEND. — ALL TRANSACTIONS RECORDED — LONG LIVE PANEM</span>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { unlockAudio, startHiss } from "/scripts/audio.js";
+    import { fetchTributes, fetchTribute, recordPurchase } from "/scripts/supabase.js";
+    import { getSlug } from "/scripts/data.js";
+
+    // Stub items — final list and prices get locked once challenges are picked.
+    const ITEMS = [
+      { id:"hint",       kind:"sponsor", cost:50,  name:"Hint",            desc:"Whisper a clue on a weekly puzzle." },
+      { id:"timeext",    kind:"sponsor", cost:100, name:"Time Extension",  desc:"Add 24 hours to a tribute's challenge deadline." },
+      { id:"boost5",     kind:"sponsor", cost:150, name:"Score Boost +5",  desc:"Add 5 points to a tribute's score on the next challenge." },
+      { id:"immunity",   kind:"sponsor", cost:250, name:"One-Round Immunity", desc:"Tribute cannot be eliminated in the next round." },
+      { id:"healing",    kind:"sponsor", cost:100, name:"Healing Drop",    desc:"Restore a tribute mid-arena." },
+      { id:"intel",      kind:"sponsor", cost:75,  name:"Intel Drop",      desc:"Send a tribute info on the next obstacle." },
+      { id:"tripwire",   kind:"sabotage",cost:75,  name:"Trip Wire",       desc:"Halve a tribute's next score." },
+      { id:"distraction",kind:"sabotage",cost:50,  name:"Distraction",     desc:"Tribute loses 25 points on the next challenge." },
+      { id:"ammo",       kind:"sponsor", cost:30,  name:"Ammo Drop",       desc:"A round of nerf darts dropped into the arena." }
+    ];
+
+    let currentTribute = null;
+    let allTributes = [];
+
+    async function run() {
+      const slug = getSlug();
+      currentTribute = slug ? await fetchTribute(slug) : null;
+      allTributes = await fetchTributes();
+
+      if (!currentTribute) {
+        document.getElementById("hud-name").textContent = "GUEST";
+        document.getElementById("hud-credits").textContent = "—";
+        document.getElementById("shop-subtitle").textContent = "Marketplace browsing only — log in to spend credits.";
+      } else {
+        document.getElementById("hud-name").textContent = currentTribute.name.toUpperCase();
+        document.getElementById("hud-credits").textContent = (currentTribute.credits ?? 0).toLocaleString();
+      }
+
+      renderItems();
+    }
+
+    function renderItems() {
+      const grid = document.getElementById("shop-grid");
+      grid.innerHTML = "";
+      const credits = currentTribute ? (currentTribute.credits ?? 0) : 0;
+
+      ITEMS.forEach(item => {
+        const card = document.createElement("div");
+        card.className = `shop-item shop-item--${item.kind}`;
+        const targets = allTributes
+          .filter(t => !currentTribute || t.slug !== currentTribute.slug)
+          .map(t => `<option value="${t.slug}">${t.name} · D${String(t.district).padStart(2,"0")}</option>`)
+          .join("");
+        const canAfford = !!currentTribute && credits >= item.cost;
+        card.innerHTML = `
+          <div class="shop-item__tag">${item.kind === "sabotage" ? "Sabotage" : "Sponsor"}</div>
+          <div class="shop-item__name">${item.name}</div>
+          <div class="shop-item__desc">${item.desc}</div>
+          <div class="shop-item__cost">${item.cost}<small>credits</small></div>
+          <select data-target>
+            <option value="">— select target —</option>
+            ${targets}
+          </select>
+          <button class="shop-item__buy" ${canAfford ? "" : "disabled"}>
+            ${canAfford ? `Buy for ${item.cost}` : (currentTribute ? "Insufficient credits" : "Login required")}
+          </button>
+        `;
+        const select = card.querySelector("[data-target]");
+        const buy = card.querySelector(".shop-item__buy");
+
+        buy.addEventListener("click", async () => {
+          const target = select.value;
+          if (!target) {
+            buy.textContent = "Select a target first";
+            return;
+          }
+          buy.disabled = true;
+          buy.textContent = "Transmitting…";
+          try {
+            await recordPurchase({
+              buyer_slug: currentTribute.slug,
+              target_slug: target,
+              item_id: item.id,
+              cost: item.cost,
+              effect: `${item.name} on ${target}`
+            });
+            buy.textContent = "Sent ✓";
+            // Optimistic credit deduction in HUD
+            currentTribute.credits = Math.max(0, (currentTribute.credits ?? 0) - item.cost);
+            document.getElementById("hud-credits").textContent = currentTribute.credits.toLocaleString();
+            setTimeout(() => renderItems(), 600);
+          } catch (err) {
+            console.error(err);
+            buy.disabled = false;
+            buy.textContent = "Failed — try again";
+          }
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    // Tap-to-receive gate
+    const startBtn = document.createElement("div");
+    startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
+    startBtn.textContent = "▸ tap to enter the marketplace";
+    document.body.appendChild(startBtn);
+    startBtn.addEventListener("click", () => {
+      unlockAudio();
+      startHiss();
+      startBtn.style.transition = "opacity 0.4s";
+      startBtn.style.opacity = "0";
+      setTimeout(() => startBtn.remove(), 400);
+    }, { once: true });
+
+    run().catch(err => {
+      console.error(err);
+      document.getElementById("shop-subtitle").textContent = "Transmission error — check console.";
+    });
+  </script>
+</body>
+</html>

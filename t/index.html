@@ -83,18 +83,9 @@
     import { loadTributes, getSlug, findTribute, districtName } from "/scripts/data.js";
 
     const FRAME_INTERVAL_MS = 95;
-    const DISTRICT_SEAL_URL = (n) => `/assets/seals/district-${n}.svg`;
-
-    async function fetchInlineSVG(url) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        return await res.text();
-      } catch { return null; }
-    }
-    async function injectSVG(target, url) {
-      const svg = await fetchInlineSVG(url);
-      if (svg) target.innerHTML = svg;
+    const DISTRICT_SEAL_URL = (n) => `/assets/seals/district-${n}.png`;
+    function injectSeal(target, url) {
+      target.innerHTML = `<img src="${url}" alt="" loading="eager">`;
     }
     function ordinal(n) {
       const s = ["th","st","nd","rd"], v = n % 100;
@@ -156,7 +147,7 @@
 
     async function startSequence(tribute, data) {
       const districtSealUrl = DISTRICT_SEAL_URL(tribute.district);
-      injectSVG(document.getElementById("seal-slot"), districtSealUrl);
+      injectSeal(document.getElementById("seal-slot"), districtSealUrl);
 
       const heading = document.getElementById("heading");
       const subheading = document.getElementById("subheading");
