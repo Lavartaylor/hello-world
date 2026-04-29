@@ -20,8 +20,8 @@ export function getSlug() {
   const fromQuery = params.get("slug");
   if (fromQuery) return fromQuery.trim().toLowerCase();
 
-  // Fallback: parse /t/{slug}/
-  const m = location.pathname.match(/\/t\/([^\/]+)\/?/);
+  // Fallback: parse /t/{slug}/ or /tv/{slug}/
+  const m = location.pathname.match(/\/(?:t|tv)\/([^\/]+)\/?/);
   if (m) return m[1].trim().toLowerCase();
 
   return null;

@@ -294,6 +294,284 @@ body::before {
   will-change: transform;
 }
 
+/* ========================================================
+   Capitol Broadcast — fullscreen CRT TV transmission
+   ======================================================== */
+
+body.broadcast {
+  background: #000;
+  overflow: hidden;
+  height: 100vh;
+}
+body.broadcast::after { display: none; }   /* page-level grain handled by .crt__static */
+body.broadcast::before { display: none; }  /* page-level vignette handled by .crt__vignette */
+
+.crt {
+  position: fixed;
+  inset: 0;
+  background-image: url("/assets/screen.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #050606;
+  z-index: 0;
+}
+
+.crt__scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 1px,
+    rgba(0, 0, 0, 0.22) 2px,
+    rgba(0, 0, 0, 0.22) 3px
+  );
+  mix-blend-mode: multiply;
+  z-index: 2;
+}
+
+.crt__static {
+  position: absolute;
+  inset: -10%;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.06;
+  mix-blend-mode: screen;
+  animation: static-shift 0.18s steps(4) infinite;
+  z-index: 3;
+}
+@keyframes static-shift {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2%, 1%); }
+  50%  { transform: translate(1%, -2%); }
+  75%  { transform: translate(-1%, 2%); }
+  100% { transform: translate(2%, -1%); }
+}
+
+.crt__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 80%, rgba(0,0,0,0.85) 100%);
+  z-index: 4;
+}
+
+/* Boot/tune-in flash on first load */
+.crt__bootflash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #fff;
+  opacity: 0;
+  animation: tune-in 1.2s var(--ease-out) forwards;
+  z-index: 5;
+}
+@keyframes tune-in {
+  0%   { opacity: 0; }
+  3%   { opacity: 0.85; }
+  6%   { opacity: 0; }
+  10%  { opacity: 0.45; }
+  14%  { opacity: 0; }
+  20%  { opacity: 0.2; }
+  100% { opacity: 0; }
+}
+
+/* Subtle ongoing flicker */
+.crt__flicker {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(255, 245, 200, 0.05);
+  mix-blend-mode: screen;
+  animation: crt-flicker 4.5s ease-in-out infinite;
+  z-index: 6;
+}
+@keyframes crt-flicker {
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: 0.6; }
+  94% { opacity: 1; }
+  96% { opacity: 0.4; }
+  97% { opacity: 1; }
+}
+
+/* Broadcast layout — sits on top of the CRT */
+.broadcast-layout {
+  position: relative;
+  z-index: 10;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: clamp(20px, 4vh, 48px) clamp(28px, 6vw, 80px);
+  color: #f1e6c8;
+  text-shadow: 0 0 4px rgba(243, 220, 160, 0.3), 0 0 16px rgba(243, 200, 100, 0.18);
+}
+
+.broadcast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-utility);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: #e8d49a;
+  opacity: 0.85;
+}
+.broadcast-header__channel { display: flex; align-items: center; gap: 0.5rem; }
+.broadcast-header__channel::before {
+  content: "CH-01";
+  padding: 2px 6px;
+  background: rgba(232, 212, 154, 0.15);
+  border: 1px solid rgba(232, 212, 154, 0.3);
+  font-size: 0.7em;
+  letter-spacing: 0;
+}
+.broadcast-header__rec {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #f0a0a0;
+}
+.broadcast-header__rec::before {
+  content: "";
+  width: 10px; height: 10px;
+  background: #e84545;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #e84545;
+  animation: rec-pulse 1.4s ease-in-out infinite;
+}
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+.broadcast-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.broadcast-seal {
+  width: 96px;
+  height: 96px;
+  margin-bottom: var(--sp-5);
+  color: #e8d49a;
+  filter: drop-shadow(0 0 12px rgba(232, 212, 154, 0.4));
+}
+.broadcast-seal svg { width: 100%; height: 100%; }
+
+.broadcast-heading {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.8rem, 3.6vw, 3rem);
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: #f6e9b5;
+  margin-bottom: var(--sp-3);
+  line-height: 1;
+}
+.broadcast-subheading {
+  font-family: var(--font-utility);
+  font-size: clamp(0.75rem, 1.4vw, 1rem);
+  text-transform: uppercase;
+  color: #d4b870;
+  margin-bottom: var(--sp-7);
+  letter-spacing: 0;
+}
+
+.broadcast-body {
+  font-family: var(--font-typewriter);
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+  line-height: 1.6;
+  color: #f1e6c8;
+  max-width: 60ch;
+  margin: 0 auto var(--sp-6);
+  min-height: 8em;
+  white-space: pre-wrap;
+}
+
+.broadcast-name {
+  display: block;
+  font-family: var(--font-artifact);
+  font-style: italic;
+  font-size: clamp(2rem, 5vw, 4rem);
+  color: #ff5050;
+  text-shadow:
+    0 0 8px rgba(255, 80, 80, 0.6),
+    0 0 24px rgba(255, 80, 80, 0.35);
+  margin: var(--sp-5) 0 var(--sp-3);
+  line-height: 1;
+}
+
+.broadcast-district {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(4rem, 12vw, 9rem);
+  color: #f6e9b5;
+  line-height: 0.9;
+  margin: var(--sp-3) 0;
+  text-shadow:
+    0 0 12px rgba(243, 220, 160, 0.5),
+    0 0 40px rgba(243, 200, 100, 0.3);
+}
+.broadcast-district small {
+  display: block;
+  font-family: var(--font-utility);
+  font-size: clamp(0.7rem, 1.1vw, 0.9rem);
+  color: #d4b870;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-3);
+  text-shadow: none;
+  font-weight: 500;
+}
+
+.broadcast-signoff {
+  margin-top: var(--sp-6);
+  font-family: var(--font-artifact);
+  font-style: italic;
+  color: #d4b870;
+  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
+  white-space: pre-wrap;
+}
+
+/* Continue button on broadcast — re-style the existing tape to read on a TV */
+.broadcast-main .continue {
+  margin-top: var(--sp-7);
+}
+
+/* Footer marquee — Capitol propaganda ticker */
+.broadcast-footer {
+  font-family: var(--font-utility);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  color: #d4b870;
+  border-top: 1px solid rgba(212, 184, 112, 0.25);
+  padding-top: var(--sp-3);
+  overflow: hidden;
+}
+.broadcast-marquee {
+  display: flex;
+  white-space: nowrap;
+  animation: marquee 36s linear infinite;
+  gap: 3rem;
+}
+.broadcast-marquee span { flex-shrink: 0; }
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
 /* RSVP form — typed onto the artifact */
 .rsvp-form {
   margin-top: var(--sp-7);

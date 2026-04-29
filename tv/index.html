@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Capitol Broadcast — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="crt">
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
+      <span class="broadcast-header__rec">LIVE</span>
+    </header>
+
+    <main class="broadcast-main">
+      <div class="broadcast-seal" id="seal-slot"></div>
+      <h1 class="broadcast-heading" id="heading"></h1>
+      <p class="broadcast-subheading" id="subheading"></p>
+      <div class="broadcast-body" id="body"></div>
+      <div id="reveal-slot" hidden>
+        <span class="broadcast-name" id="name-line"></span>
+        <span class="broadcast-district">
+          <small>OF DISTRICT</small>
+          <span id="district-num"></span>
+        </span>
+        <div class="broadcast-signoff" id="signoff"></div>
+      </div>
+      <button class="continue" id="continue" type="button">Acknowledge</button>
+    </main>
+
+    <footer class="broadcast-footer">
+      <div class="broadcast-marquee">
+        <span>● 75TH ANNUAL HUNGER GAMES — OFFICIAL CAPITOL TRANSMISSION — ALL CITIZENS ATTEND — LONG LIVE PANEM — MAY THE ODDS BE EVER IN YOUR FAVOR</span>
+        <span>● 75TH ANNUAL HUNGER GAMES — OFFICIAL CAPITOL TRANSMISSION — ALL CITIZENS ATTEND — LONG LIVE PANEM — MAY THE ODDS BE EVER IN YOUR FAVOR</span>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { typeInto } from "/scripts/typewriter.js";
+    import { unlockAudio, dingBell } from "/scripts/audio.js";
+    import { jitterChars } from "/scripts/jitter.js";
+    import { loadTributes, getSlug, findTribute, districtName } from "/scripts/data.js";
+
+    const DISTRICT_SEAL_URL = (n) => `/assets/seals/district-${n}.svg`;
+
+    async function fetchInlineSVG(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.text();
+      } catch { return null; }
+    }
+    async function injectSVG(target, url) {
+      const svg = await fetchInlineSVG(url);
+      if (svg) target.innerHTML = svg;
+    }
+    function ordinal(n) {
+      const s = ["th","st","nd","rd"], v = n % 100;
+      return n + (s[(v-20)%10] || s[v] || s[0]);
+    }
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function run() {
+      const data = await loadTributes();
+      const slug = getSlug();
+      const tribute = findTribute(data, slug);
+
+      if (!tribute) {
+        document.getElementById("heading").textContent = "NO SIGNAL";
+        document.getElementById("subheading").textContent = "Terminal not recognized";
+        document.getElementById("body").textContent = "If you believe this is in error, present yourself to the Gamemakers.";
+        return;
+      }
+
+      // Need a tap to unlock audio (browser policy)
+      const startBtn = document.createElement("div");
+      startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
+      startBtn.textContent = "▸ tap to receive transmission";
+      document.body.appendChild(startBtn);
+
+      const begin = async () => {
+        unlockAudio();
+        startBtn.style.transition = "opacity 0.4s";
+        startBtn.style.opacity = "0";
+        setTimeout(() => startBtn.remove(), 400);
+
+        // Brief signal-acquisition hold, then start typing
+        await wait(1300);
+        await runBroadcast(tribute, data);
+      };
+      startBtn.addEventListener("click", begin, { once: true });
+    }
+
+    async function runBroadcast(tribute, data) {
+      // Inject district seal at top
+      injectSVG(document.getElementById("seal-slot"), DISTRICT_SEAL_URL(tribute.district));
+
+      const heading = document.getElementById("heading");
+      const subheading = document.getElementById("subheading");
+      const body = document.getElementById("body");
+      const reveal = document.getElementById("reveal-slot");
+      const nameLine = document.getElementById("name-line");
+      const districtNum = document.getElementById("district-num");
+      const signoff = document.getElementById("signoff");
+      const cont = document.getElementById("continue");
+
+      await new Promise(r => typeInto(heading, "BY ORDER OF THE CAPITOL", {
+        speed: 95, jitter: 30, ding: false, onDone: r
+      }));
+      dingBell();
+      await wait(500);
+
+      await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  REAPING NOTICE", {
+        speed: 60, jitter: 25, ding: false, onDone: r
+      }));
+      await wait(800);
+
+      const body1 = `By edict of the Gamemakers, and in accordance with the Treaty of the Treason, the following citizen has been selected to represent their district in the [d]${ordinal(75)}[/d] Annual Hunger Games:`;
+      await new Promise(r => typeInto(body, body1, {
+        speed: 55, jitter: 28, sentencePause: 450, onDone: r
+      }));
+      await wait(900);
+
+      reveal.hidden = false;
+      nameLine.textContent = "";
+      await new Promise(r => typeInto(nameLine, tribute.name.toUpperCase(), {
+        speed: 180, jitter: 60, sentencePause: 0, onDone: r
+      }));
+      jitterChars(nameLine, { maxRot: 4, maxShift: 1.8, maxScale: 0.05 });
+      dingBell();
+      await wait(700);
+
+      districtNum.textContent = String(tribute.district);
+      jitterChars(districtNum, { maxRot: 5, maxShift: 2.5, maxScale: 0.08 });
+      await wait(600);
+
+      const sig = `\nMay the odds be ever in your favor.\n— The Gamemakers`;
+      await new Promise(r => typeInto(signoff, sig, {
+        speed: 70, jitter: 28, ding: false, onDone: r
+      }));
+
+      await wait(400);
+      cont.classList.add("is-ready");
+      cont.setAttribute("aria-label", "Acknowledge the reaping");
+      cont.addEventListener("click", () => { cont.disabled = true; });
+    }
+
+    run().catch(console.error);
+  </script>
+</body>
+</html>

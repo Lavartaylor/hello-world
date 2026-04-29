@@ -2,7 +2,9 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/t/:slug", "destination": "/t" },
-    { "source": "/t/:slug/", "destination": "/t" }
+    { "source": "/t/:slug/", "destination": "/t" },
+    { "source": "/tv/:slug", "destination": "/tv" },
+    { "source": "/tv/:slug/", "destination": "/tv" }
   ],
   "headers": [
     {
