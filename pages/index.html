@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Channel Guide — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    body.broadcast { overflow: hidden; }
+    .broadcast-main { overflow-y: auto; padding-right: 8px; }
+
+    .guide {
+      width: min(1100px, 100%);
+      margin: var(--sp-4) auto 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--sp-4);
+    }
+    .guide-card {
+      background: rgba(0, 14, 30, 0.55);
+      border: 1.5px solid rgba(255, 220, 120, 0.22);
+      padding: var(--sp-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-2);
+      color: #fff8e0;
+      font-family: var(--font-utility);
+      text-align: left;
+      text-shadow:
+        -1px 0 rgba(0, 0, 0, 0.85),
+        1px 0 rgba(0, 0, 0, 0.85),
+        0 -1px rgba(0, 0, 0, 0.85),
+        0 1px rgba(0, 0, 0, 0.85);
+    }
+    .guide-card__channel {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #ad8a40;
+    }
+    .guide-card__channel .live {
+      color: #86e870;
+    }
+    .guide-card__channel .stub {
+      color: #ff8b6e;
+    }
+    .guide-card__name {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      color: #fff8e0;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+    }
+    .guide-card__desc {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #ffe4a0;
+      line-height: 1.4;
+      margin-bottom: var(--sp-2);
+    }
+    .guide-card__links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: auto;
+    }
+    .guide-card__link {
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 6px 10px;
+      background: linear-gradient(180deg, #3a3530 0%, #2a2622 50%, #1a1714 100%);
+      border: 1px solid #4a4540;
+      color: #f0e8d4;
+      text-decoration: none;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 240, 200, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 2px 0 #0a0908;
+    }
+    .guide-card__link:hover {
+      background: linear-gradient(180deg, #45403a 0%, #322d28 50%, #1f1b18 100%);
+      color: #fff8e0;
+    }
+    .guide-card__link--primary {
+      border-color: rgba(255, 216, 112, 0.5);
+      color: #ffd870;
+    }
+    .guide-card__link--admin {
+      border-color: rgba(255, 100, 100, 0.4);
+      color: #ff8b6e;
+    }
+    .guide-section {
+      grid-column: 1 / -1;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #ffd870;
+      padding: var(--sp-3) 0 var(--sp-2);
+      border-bottom: 1px solid rgba(255, 216, 112, 0.25);
+      margin-top: var(--sp-3);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+    }
+    .guide-section:first-child { margin-top: 0; }
+  </style>
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="mobile-block">
+    <div class="mobile-block__inner">
+      <div class="mobile-block__title">Signal Unavailable</div>
+      <p class="mobile-block__body">This terminal is not authorized for handheld access. Please return on a desktop computer.</p>
+      <p class="mobile-block__small">— Panem Capitol Broadcast —</p>
+    </div>
+  </div>
+
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
+      <div class="broadcast-hud">
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Channel</span>
+          <span class="broadcast-hud__value">GUIDE</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <h1 class="screen-form__title">Channel Guide</h1>
+      <p class="screen-form__subtitle">75th Hunger Games — every transmission, one terminal</p>
+
+      <div class="guide">
+
+        <h2 class="guide-section">Public Channels</h2>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-01</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Holding Page</div>
+          <div class="guide-card__desc">Capitol gate page — what guests see at the bare URL.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link guide-card__link--primary" href="/">Open</a>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-02</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Citizen Census (RSVP)</div>
+          <div class="guide-card__desc">Three-screen flow — intro, registration form (with optional webcam portrait), confirmation. The link you'll send out first.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link guide-card__link--primary" href="/rsvp">Open</a>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-03</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Live Standings</div>
+          <div class="guide-card__desc">Public leaderboard — all citizens ranked by points, with the Reaping Line marking the top 10 cutoff.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link guide-card__link--primary" href="/leaderboard">Open</a>
+          </div>
+        </div>
+
+        <h2 class="guide-section">Per-Citizen Channels (slug-gated)</h2>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-12</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Reaping — Broadcast (Primary)</div>
+          <div class="guide-card__desc">CRT broadcast version of the reaping notice. The dramatic announcement with district seal, name reveal, and Acknowledge.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link guide-card__link--primary" href="/tv/lavar">LaVar</a>
+            <a class="guide-card__link" href="/tv/rachel">Rachel</a>
+            <a class="guide-card__link" href="/tv/demo">Demo (D7)</a>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-13</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Reaping — Letter (Backup)</div>
+          <div class="guide-card__desc">Stop-motion envelope opens to a paper reaping notice with typewriter text. Kept as a backup style.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link guide-card__link--primary" href="/t/lavar">LaVar</a>
+            <a class="guide-card__link" href="/t/rachel">Rachel</a>
+            <a class="guide-card__link" href="/t/demo">Demo (D7)</a>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-21</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Opening Bet</div>
+          <div class="guide-card__desc">Citizen's one-time wager on the eventual victor. Tribute grid, lock-in, one bet per voter.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link guide-card__link--primary" href="/vote/lavar">LaVar</a>
+            <a class="guide-card__link" href="/vote/rachel">Rachel</a>
+            <a class="guide-card__link" href="/vote/demo">Demo</a>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-22</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Capitol Marketplace</div>
+          <div class="guide-card__desc">Spend credits on sponsorship or sabotage. Stub item list — final items get locked once challenges are picked.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link guide-card__link--primary" href="/shop/lavar">LaVar</a>
+            <a class="guide-card__link" href="/shop/rachel">Rachel</a>
+            <a class="guide-card__link" href="/shop/demo">Demo</a>
+          </div>
+        </div>
+
+        <h2 class="guide-section">Not Yet Built</h2>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-30</span><span class="stub">○ Pending</span></div>
+          <div class="guide-card__name">Halloween Meter</div>
+          <div class="guide-card__desc">The real-time credit-spending finale on Halloween night. Capitol fills meters on the Final 6 — bottom 2 cut, top 4 enter the arena.</div>
+          <div class="guide-card__links">
+            <span class="guide-card__link" style="opacity:0.4;cursor:default;">Not built</span>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>CH-90</span><span class="stub">○ Pending</span></div>
+          <div class="guide-card__name">Gamemaker Console</div>
+          <div class="guide-card__desc">Admin dashboard — view RSVPs, promote to tributes, assign districts, edit points / credits, run challenges.</div>
+          <div class="guide-card__links">
+            <span class="guide-card__link guide-card__link--admin" style="opacity:0.4;cursor:default;">Not built</span>
+          </div>
+        </div>
+
+        <h2 class="guide-section">Backend</h2>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>SQL</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Supabase Console</div>
+          <div class="guide-card__desc">Personal Supabase project · all tables prefixed <code style="font-family:var(--font-typewriter);">hg_</code>. Edit tributes, view RSVPs, run SQL.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link guide-card__link--admin" href="https://supabase.com/dashboard/project/bdenaszyupuelismxyer/editor" target="_blank" rel="noopener">Table editor</a>
+            <a class="guide-card__link guide-card__link--admin" href="https://supabase.com/dashboard/project/bdenaszyupuelismxyer/sql/new" target="_blank" rel="noopener">SQL editor</a>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card__channel"><span>GH</span><span class="live">● Live</span></div>
+          <div class="guide-card__name">Repository</div>
+          <div class="guide-card__desc">Source on GitHub. Vercel auto-deploys every push to <code style="font-family:var(--font-typewriter);">master</code>.</div>
+          <div class="guide-card__links">
+            <a class="guide-card__link" href="https://github.com/Lavartaylor/hello-world" target="_blank" rel="noopener">GitHub</a>
+            <a class="guide-card__link" href="https://vercel.com/dashboard" target="_blank" rel="noopener">Vercel</a>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="broadcast-footer">
+      <div class="broadcast-marquee">
+        <span>● PANEM CAPITOL CHANNEL GUIDE — ALL TRANSMISSIONS — INTERNAL USE ONLY — LONG LIVE PANEM</span>
+        <span>● PANEM CAPITOL CHANNEL GUIDE — ALL TRANSMISSIONS — INTERNAL USE ONLY — LONG LIVE PANEM</span>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { unlockAudio, startHiss } from "/scripts/audio.js";
+
+    const startBtn = document.createElement("div");
+    startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
+    startBtn.textContent = "▸ tap to access channel guide";
+    document.body.appendChild(startBtn);
+    startBtn.addEventListener("click", () => {
+      unlockAudio();
+      startHiss();
+      startBtn.style.transition = "opacity 0.4s";
+      startBtn.style.opacity = "0";
+      setTimeout(() => startBtn.remove(), 400);
+    }, { once: true });
+  </script>
+</body>
+</html>
