@@ -849,3 +849,157 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   margin-top: var(--sp-7);
   text-align: center;
 }
+
+/* ========================================================
+   Voting page — pick a tribute, lock in your opening bet
+   Card grid sits inside .broadcast-main
+   ======================================================== */
+
+.vote-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--sp-4);
+  width: 100%;
+  max-width: 980px;
+  margin: var(--sp-4) auto 0;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+}
+.vote-grid.is-ready {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.vote-card {
+  background: rgba(0, 14, 30, 0.45);
+  border: 1.5px solid rgba(255, 220, 120, 0.2);
+  padding: var(--sp-4) var(--sp-3);
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+  font-family: var(--font-utility);
+  text-transform: uppercase;
+  color: #fff8e0;
+}
+.vote-card:hover {
+  border-color: rgba(255, 220, 120, 0.55);
+  background: rgba(0, 30, 60, 0.55);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.vote-card.is-selected {
+  border-color: #ffd870;
+  background: rgba(40, 30, 0, 0.55);
+  box-shadow:
+    0 0 0 1px #ffd870 inset,
+    0 0 24px rgba(255, 216, 112, 0.45),
+    0 6px 18px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.vote-card__name {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  color: #fff8e0;
+  margin-bottom: 6px;
+  letter-spacing: 0;
+  line-height: 1.1;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 0 12px rgba(255, 220, 120, 0.18);
+}
+.vote-card.is-selected .vote-card__name {
+  color: #ffe4a0;
+}
+.vote-card__district {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #ad8a40;
+  margin-bottom: var(--sp-3);
+  letter-spacing: 0;
+}
+.vote-card__points {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: #ffd870;
+  letter-spacing: 0;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 0 10px rgba(255, 216, 112, 0.5);
+}
+.vote-card__points-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: #ad8a40;
+  letter-spacing: 0;
+}
+
+/* Self-vote indicator */
+.vote-card--self::before {
+  content: "YOU";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #ffd870;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 216, 112, 0.35);
+  letter-spacing: 0;
+}
+
+/* Locked-in confirmation panel */
+.vote-locked {
+  text-align: center;
+  margin-top: var(--sp-5);
+  font-family: var(--font-utility);
+  text-transform: uppercase;
+  color: #fff8e0;
+}
+.vote-locked__label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ad8a40;
+  margin-bottom: var(--sp-3);
+  letter-spacing: 0;
+}
+.vote-locked__pick {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  color: #ffe4a0;
+  letter-spacing: 0;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 0 24px rgba(255, 216, 112, 0.5);
+  margin-bottom: var(--sp-2);
+  line-height: 1;
+}
+.vote-locked__district {
+  font-size: 0.95rem;
+  color: #ad8a40;
+  margin-bottom: var(--sp-5);
+  letter-spacing: 0;
+}
+.vote-locked__caption {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #ad8a40;
+  font-weight: 400;
+  margin-top: var(--sp-3);
+  text-transform: none;
+  letter-spacing: 0;
+}

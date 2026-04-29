@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Opening Bet — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">PANEM CAPITOL BROADCAST</span>
+      <div class="broadcast-hud" id="hud">
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">District</span>
+          <span class="broadcast-hud__value" id="hud-district">—</span>
+        </div>
+        <div class="broadcast-hud__row broadcast-hud__row--points">
+          <span class="broadcast-hud__label">Points</span>
+          <span class="broadcast-hud__value" id="hud-points">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <h1 class="broadcast-heading" id="heading"></h1>
+      <p class="broadcast-subheading" id="subheading"></p>
+      <div class="broadcast-body" id="body"></div>
+
+      <!-- Selection grid -->
+      <div class="vote-grid" id="vote-grid" hidden></div>
+
+      <!-- Locked-in confirmation -->
+      <div class="vote-locked" id="vote-locked" hidden>
+        <div class="vote-locked__label">Wager Locked</div>
+        <div class="vote-locked__pick" id="locked-name"></div>
+        <div class="vote-locked__district" id="locked-district"></div>
+        <p class="vote-locked__caption">May the odds be ever in your favor.<br>The Capitol records all wagers.</p>
+      </div>
+    </main>
+
+    <footer class="broadcast-footer">
+      <div class="broadcast-marquee">
+        <span>● 75TH ANNUAL HUNGER GAMES — OPENING BETS ACCEPTED — ONE WAGER PER CITIZEN — LONG LIVE PANEM</span>
+        <span>● 75TH ANNUAL HUNGER GAMES — OPENING BETS ACCEPTED — ONE WAGER PER CITIZEN — LONG LIVE PANEM</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Keyboard input — Lock In button -->
+  <div class="keyboard-bar">
+    <button class="key" id="lock-key" type="button" hidden disabled>
+      Lock in your wager
+      <span class="key__caption">select a citizen above to enable</span>
+    </button>
+  </div>
+
+  <script type="module">
+    import { typeInto } from "/scripts/typewriter.js";
+    import { unlockAudio, dingBell, startHiss } from "/scripts/audio.js";
+    import { loadTributes, getSlug, findTribute, districtName } from "/scripts/data.js";
+    import { submitVote, fetchVote } from "/scripts/supabase.js";
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    let voterTribute = null;
+    let allTributes = [];
+    let selectedSlug = null;
+
+    async function run() {
+      const data = await loadTributes();
+      allTributes = data.tributes;
+      const slug = getSlug();
+      voterTribute = findTribute(data, slug);
+
+      if (!voterTribute) {
+        document.getElementById("heading").textContent = "NO SIGNAL";
+        document.getElementById("subheading").textContent = "Terminal not recognized";
+        document.getElementById("body").textContent = "Only registered citizens may place opening bets. Present yourself to the Gamemakers.";
+        document.getElementById("hud").style.display = "none";
+        return;
+      }
+
+      // HUD
+      document.getElementById("hud-name").textContent = voterTribute.name.toUpperCase();
+      document.getElementById("hud-district").textContent = String(voterTribute.district).padStart(2, "0");
+      document.getElementById("hud-points").textContent = (voterTribute.points ?? 0).toLocaleString();
+
+      // Has this citizen already voted?
+      const existingVote = await fetchVote(voterTribute.slug);
+      if (existingVote) {
+        showLockedView(existingVote.target_slug);
+        return;
+      }
+
+      // Tap-to-receive gate
+      const startBtn = document.createElement("div");
+      startBtn.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;background:rgba(0,0,0,0.4);color:#e8d49a;font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;letter-spacing:0;font-weight:500;";
+      startBtn.textContent = "▸ tap to receive transmission";
+      document.body.appendChild(startBtn);
+      startBtn.addEventListener("click", async () => {
+        unlockAudio();
+        startHiss();
+        startBtn.style.transition = "opacity 0.4s";
+        startBtn.style.opacity = "0";
+        setTimeout(() => startBtn.remove(), 400);
+        await wait(1300);
+        await runBroadcast();
+      }, { once: true });
+    }
+
+    async function runBroadcast() {
+      const heading = document.getElementById("heading");
+      const subheading = document.getElementById("subheading");
+      const body = document.getElementById("body");
+
+      await new Promise(r => typeInto(heading, "OPENING BET", {
+        speed: 95, jitter: 30, ding: false, clicks: false, onDone: r
+      }));
+      dingBell();
+      await wait(400);
+
+      await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  WAGER REGISTRATION", {
+        speed: 60, jitter: 25, ding: false, clicks: false, onDone: r
+      }));
+      await wait(600);
+
+      const proclamation = `Each citizen of Panem is permitted ONE wager on the eventual victor. Selection is final. The Capitol records all bets in perpetuity.`;
+      await new Promise(r => typeInto(body, proclamation, {
+        speed: 55, jitter: 28, sentencePause: 450, clicks: false, ding: false, onDone: r
+      }));
+
+      await wait(500);
+      renderGrid();
+      const lockKey = document.getElementById("lock-key");
+      lockKey.hidden = false;
+      lockKey.classList.add("is-ready");
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById("vote-grid");
+      grid.hidden = false;
+      grid.innerHTML = "";
+      // Sort by points desc so the leaders are first
+      const sorted = [...allTributes].sort((a, b) => (b.points || 0) - (a.points || 0));
+      for (const t of sorted) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "vote-card";
+        if (t.slug === voterTribute.slug) card.classList.add("vote-card--self");
+        card.dataset.slug = t.slug;
+        card.innerHTML = `
+          <span class="vote-card__name">${t.name}</span>
+          <span class="vote-card__district">District ${String(t.district).padStart(2, "0")}</span>
+          <span class="vote-card__points">${(t.points ?? 0).toLocaleString()}</span>
+          <span class="vote-card__points-label">Points</span>
+        `;
+        card.addEventListener("click", () => selectCard(t.slug));
+        grid.appendChild(card);
+      }
+      requestAnimationFrame(() => grid.classList.add("is-ready"));
+    }
+
+    function selectCard(slug) {
+      selectedSlug = slug;
+      const grid = document.getElementById("vote-grid");
+      grid.querySelectorAll(".vote-card").forEach(c => {
+        c.classList.toggle("is-selected", c.dataset.slug === slug);
+      });
+      const lockKey = document.getElementById("lock-key");
+      lockKey.disabled = false;
+      const pick = allTributes.find(t => t.slug === slug);
+      lockKey.querySelector(".key__caption").textContent =
+        `betting on ${pick.name} — district ${pick.district}`;
+    }
+
+    document.getElementById("lock-key").addEventListener("click", async (e) => {
+      if (!selectedSlug) return;
+      const lockKey = e.currentTarget;
+      lockKey.disabled = true;
+      lockKey.querySelector(".key__caption").textContent = "transmitting…";
+      try {
+        await submitVote(voterTribute.slug, selectedSlug);
+        showLockedView(selectedSlug);
+      } catch (err) {
+        console.error("Vote submission failed:", err);
+        lockKey.disabled = false;
+        lockKey.querySelector(".key__caption").textContent = "transmission failed — try again";
+      }
+    });
+
+    function showLockedView(targetSlug) {
+      const pick = allTributes.find(t => t.slug === targetSlug);
+      const lockKey = document.getElementById("lock-key");
+      const grid = document.getElementById("vote-grid");
+      const locked = document.getElementById("vote-locked");
+      const heading = document.getElementById("heading");
+      const subheading = document.getElementById("subheading");
+      const body = document.getElementById("body");
+
+      heading.textContent = "WAGER LOCKED";
+      subheading.textContent = "75TH ANNUAL HUNGER GAMES  ·  OPENING BET ON RECORD";
+      body.innerHTML = `Your prediction has been transmitted to the Gamemakers and may not be amended.`;
+
+      grid.hidden = true;
+      lockKey.hidden = true;
+      locked.hidden = false;
+      document.getElementById("locked-name").textContent = pick ? pick.name.toUpperCase() : targetSlug.toUpperCase();
+      document.getElementById("locked-district").textContent = pick ? `District ${String(pick.district).padStart(2, "0")}` : "";
+    }
+
+    run().catch(err => {
+      console.error(err);
+      document.getElementById("heading").textContent = "TRANSMISSION ERROR";
+      document.getElementById("body").textContent = "The Capitol terminal is unreachable. Please try again.";
+    });
+  </script>
+</body>
+</html>
