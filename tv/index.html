@@ -73,12 +73,14 @@
     </footer>
   </div>
 
-  <!-- Keyboard input — sits below the broadcast, on top of the page -->
-  <div class="keyboard-bar">
-    <button class="key" id="continue" type="button">
-      Acknowledge
-      <span class="key__caption">press to confirm</span>
+  <!-- Acknowledge knob — same UI primitive as RSVP / Vote -->
+  <div class="tuner-knob" id="ack-tuner" hidden>
+    <div class="tuner-knob__label">Acknowledge</div>
+    <button type="button" class="tuner-knob__dial" id="continue">
+      <div class="tuner-knob__indicator"></div>
+      <div class="tuner-knob__hub"></div>
     </button>
+    <div class="tuner-knob__caption" id="ack-caption">Turn to confirm</div>
   </div>
 
   <script type="module">
@@ -170,9 +172,15 @@
       }));
 
       await wait(400);
-      cont.classList.add("is-ready");
+      const ackTuner = document.getElementById("ack-tuner");
+      const ackCaption = document.getElementById("ack-caption");
+      ackTuner.hidden = false;
       cont.setAttribute("aria-label", "Acknowledge the reaping");
-      cont.addEventListener("click", () => { cont.disabled = true; });
+      cont.addEventListener("click", () => {
+        ackTuner.classList.add("is-active", "is-locked");
+        cont.disabled = true;
+        ackCaption.textContent = "Acknowledged";
+      }, { once: true });
     }
 
     run().catch(console.error);

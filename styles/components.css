@@ -418,8 +418,8 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   z-index: 10;
   height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: clamp(20px, 4vh, 48px) clamp(28px, 6vw, 80px) clamp(120px, 14vh, 160px);
+  grid-template-rows: auto 1fr;
+  padding: clamp(20px, 4vh, 48px) clamp(28px, 6vw, 80px) clamp(40px, 5vh, 60px);
   color: #fff8e0;
   text-shadow:
     0 1px 0 rgba(0, 0, 0, 0.85),
@@ -503,17 +503,20 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   max-width: 980px;
   margin: 0 auto;
   width: 100%;
-  /* Anchor content top-aligned with breathing room above so the typewriter
-     reveals downward without re-centering with each new line. */
-  padding-top: clamp(40px, 8vh, 80px);
+  /* Anchor content top-aligned with breathing room above. Tuned so the
+     reaping (largest content stack) fits a typical 800-1100px viewport
+     without clipping. Auto-scroll only as a last-ditch safety net. */
+  padding-top: clamp(32px, 6vh, 80px);
+  padding-bottom: 56px;          /* clear the pinned footer marquee */
+  overflow-y: auto;
 }
 
 .broadcast-seal {
-  width: clamp(120px, 14vw, 180px);
-  height: clamp(120px, 14vw, 180px);
-  margin-bottom: var(--sp-5);
+  width: clamp(90px, 10vw, 130px);
+  height: clamp(90px, 10vw, 130px);
+  margin-bottom: var(--sp-4);
   color: #e8d49a;
-  filter: drop-shadow(0 0 18px rgba(232, 212, 154, 0.45));
+  filter: drop-shadow(0 0 14px rgba(232, 212, 154, 0.4));
 }
 .broadcast-seal svg,
 .broadcast-seal img {
@@ -935,6 +938,8 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   gap: 10px;
   pointer-events: none;
 }
+/* `display: flex` was overriding the [hidden] attribute — restore native hide */
+.tuner-knob[hidden] { display: none; }
 .tuner-knob__label {
   font-family: var(--font-display);
   font-weight: 900;
@@ -1091,15 +1096,25 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   }
 }
 
-/* Footer marquee — Capitol propaganda ticker */
+/* Footer marquee — pinned to the very bottom edge of the viewport,
+   sitting above the CRT effects layer but below modal content. */
 .broadcast-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 11;
   font-family: var(--font-utility);
-  font-size: var(--fs-xs);
+  font-size: 0.78rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: #d4b870;
-  border-top: 1px solid rgba(212, 184, 112, 0.25);
-  padding-top: var(--sp-3);
+  padding: 8px 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
+  border-top: 1px solid rgba(212, 184, 112, 0.18);
   overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
 }
 .broadcast-marquee {
   display: flex;
@@ -1312,6 +1327,12 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 .screen-intro__cta.is-ready {
   opacity: 1;
   transform: translateY(0);
+}
+/* The .key button inside the CTA has its own opacity:0 default — make sure
+   it lights up when the parent CTA goes is-ready. */
+.screen-intro__cta.is-ready .key {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .screen-form__title {
