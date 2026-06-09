@@ -139,7 +139,8 @@
   <script type="module">
     import { ensureAudioReady } from "/scripts/audio.js";
     import {
-      fetchTribute, fetchActiveCaptionRound, fetchCaption, submitCaption
+      fetchTribute, fetchActiveCaptionRound, fetchCaption, submitCaption,
+      fetchCaptionsForRound, voteCaption, fetchCaptionVoteFromVoter, fetchTributes
     } from "/scripts/supabase.js";
     import { getSlug } from "/scripts/data.js";
 
@@ -246,21 +247,85 @@
       });
     }
 
-    function renderDone(text) {
+    async function renderDone(text) {
       const tuner = document.getElementById("tuner");
       tuner.hidden = true;
+      // Has this citizen already voted? If yes, show their pick. If no, offer to vote.
+      const myVote = await fetchCaptionVoteFromVoter(round.id, tribute.slug);
+      const allCaptions = await fetchCaptionsForRound(round.id);
+      const others = allCaptions.filter(c => c.tribute_slug !== tribute.slug);
+      const hasOthers = others.length > 0;
+
       document.getElementById("content").innerHTML = `
         <div class="caption-stack">
           <img class="caption-photo" src="${round.photo_url}" alt="">
           <div class="caption-done">
             <div class="caption-done__label">Caption Locked</div>
             <div class="caption-done__text">“${text}”</div>
-            <p style="font-family:var(--font-utility);font-weight:500;font-size:0.85rem;color:#ad8a40;text-transform:uppercase;letter-spacing:0.04em;margin-top:var(--sp-4);text-shadow:0 1px 0 rgba(0,0,0,0.85);">
-              Voting opens once all citizens have submitted.
-            </p>
+            ${myVote ? `
+              <p style="font-family:var(--font-utility);font-weight:600;font-size:0.85rem;color:#86e870;text-transform:uppercase;letter-spacing:0.04em;margin-top:var(--sp-5);text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+                Vote cast ✓
+              </p>
+            ` : (hasOthers ? `
+              <button class="key key--small is-ready" id="go-vote" style="margin-top:var(--sp-5);">Vote for funniest</button>
+              <p style="font-family:var(--font-utility);font-weight:500;font-size:0.75rem;color:#ad8a40;text-transform:uppercase;letter-spacing:0.04em;margin-top:var(--sp-3);">
+                ${others.length} other ${others.length === 1 ? "caption" : "captions"} ready to vote on.
+              </p>
+            ` : `
+              <p style="font-family:var(--font-utility);font-weight:500;font-size:0.85rem;color:#ad8a40;text-transform:uppercase;letter-spacing:0.04em;margin-top:var(--sp-4);text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+                Waiting for others. Refresh later to vote.
+              </p>
+            `)}
           </div>
         </div>
       `;
+
+      const voteBtn = document.getElementById("go-vote");
+      if (voteBtn) voteBtn.addEventListener("click", () => renderVoting(others));
+    }
+
+    function renderVoting(others) {
+      document.getElementById("content").innerHTML = `
+        <div class="caption-stack">
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-utility);font-weight:700;font-size:0.85rem;color:#d4b870;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--sp-2);">Vote for the funniest</div>
+            <p style="font-family:var(--font-utility);font-weight:600;font-size:0.85rem;color:#ffe4a0;text-shadow:0 1px 0 rgba(0,0,0,0.85);max-width:36ch;margin:0 auto;line-height:1.4;">
+              Pick one. You can't undo. You can't vote for yourself.
+            </p>
+          </div>
+          <img class="caption-photo" src="${round.photo_url}" alt="">
+          <div id="caption-list" style="display:flex;flex-direction:column;gap:var(--sp-3);">
+            ${others.map(c => `
+              <button class="vote-card" data-caption-id="${c.id}" style="text-align:left;padding:var(--sp-3) var(--sp-4);">
+                <span style="font-family:var(--font-typewriter);font-size:1rem;font-weight:500;color:#fff8e0;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);text-transform:none;letter-spacing:0;">
+                  “${c.text}”
+                </span>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      `;
+
+      document.querySelectorAll("[data-caption-id]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const captionId = btn.dataset.captionId;
+          const captionText = btn.querySelector("span").textContent.trim();
+          if (!confirm(`Lock vote for: ${captionText}`)) return;
+          btn.disabled = true;
+          btn.style.opacity = "0.6";
+          btn.classList.add("is-selected");
+          try {
+            await voteCaption(captionId, tribute.slug);
+            await renderDone(existing?.text || "");
+          } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            btn.style.opacity = "1";
+            btn.classList.remove("is-selected");
+            alert("Vote failed — try again.");
+          }
+        });
+      });
     }
 
     ensureAudioReady();

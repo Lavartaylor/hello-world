@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>The Auction — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    .auction-grid {
+      width: min(640px, 100%);
+      margin: var(--sp-4) auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+    }
+    .lot {
+      background: rgba(0, 14, 30, 0.55);
+      border: 1.5px solid rgba(255, 220, 120, 0.22);
+      padding: var(--sp-4);
+      color: #fff8e0;
+      font-family: var(--font-utility);
+      text-shadow:
+        -1px 0 rgba(0, 0, 0, 0.85),
+        1px 0 rgba(0, 0, 0, 0.85),
+        0 -1px rgba(0, 0, 0, 0.85),
+        0 1px rgba(0, 0, 0, 0.85);
+    }
+    .lot__title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.15rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #fff8e0;
+      margin-bottom: 4px;
+    }
+    .lot__desc {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #ffe4a0;
+      margin-bottom: var(--sp-3);
+      line-height: 1.4;
+    }
+    .lot__bid-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+    }
+    .lot__input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 220, 120, 0.35);
+      color: #fff8e0;
+      padding: 8px 12px;
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 1rem;
+      outline: none;
+    }
+    .lot__btn {
+      padding: 8px 18px;
+      background: linear-gradient(180deg, #3a3530 0%, #2a2622 50%, #1a1714 100%);
+      border: 1px solid rgba(255, 220, 120, 0.4);
+      color: #ffd870;
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+    }
+    .lot__btn:disabled { opacity: 0.5; cursor: default; }
+    .lot__status {
+      font-size: 0.7rem;
+      color: #d4b870;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 6px;
+    }
+    .lot__status.is-locked { color: #86e870; }
+  </style>
+</head>
+<body class="broadcast" data-role="capitol">
+  <div class="crt">
+    <div class="crt__scrim"></div><div class="crt__static"></div><div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div><div class="crt__flicker"></div><div class="crt__bootflash"></div>
+  </div>
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">CH-W4 · THE AUCTION</span>
+      <div class="broadcast-hud" id="hud" hidden>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+        <div class="broadcast-hud__row broadcast-hud__row--points">
+          <span class="broadcast-hud__label">Credits</span>
+          <span class="broadcast-hud__value" id="hud-credits">0</span>
+        </div>
+      </div>
+    </header>
+    <main class="broadcast-main">
+      <div id="content"><p class="admin-empty">Loading transmission…</p></div>
+    </main>
+  </div>
+  <script type="module">
+    import { ensureAudioReady } from "/scripts/audio.js";
+    import { fetchTribute, fetchActiveAuctionLots, submitAuctionBid, fetchMyBids } from "/scripts/supabase.js";
+    import { getSlug } from "/scripts/data.js";
+
+    let tribute = null;
+
+    function renderEmpty(msg) {
+      document.getElementById("content").innerHTML = `
+        <div style="text-align:center;padding-top:var(--sp-6);">
+          <h1 class="screen-form__title">The Auction</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:1rem;color:#ffe4a0;margin-top:var(--sp-4);max-width:38ch;margin:var(--sp-4) auto 0;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">${msg}</p>
+        </div>
+      `;
+    }
+
+    async function run() {
+      const slug = getSlug();
+      tribute = slug ? await fetchTribute(slug) : null;
+      if (!tribute) return renderEmpty("No citizen detected. Use the personal link the Gamemakers sent you.");
+
+      document.getElementById("hud").hidden = false;
+      document.getElementById("hud-name").textContent = tribute.name.toUpperCase();
+      document.getElementById("hud-credits").textContent = (tribute.credits ?? 0).toLocaleString();
+
+      const [lots, bids] = await Promise.all([
+        fetchActiveAuctionLots(),
+        fetchMyBids(tribute.slug)
+      ]);
+      if (!lots.length) return renderEmpty("No lots up for auction yet. The Gamemakers haven't dropped the inventory.");
+
+      const myBidsByLot = Object.fromEntries(bids.map(b => [b.lot_id, b.amount]));
+
+      const root = document.getElementById("content");
+      root.innerHTML = `
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-utility);font-weight:700;font-size:0.85rem;color:#d4b870;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--sp-2);">Week 4 · The Auction</div>
+          <h1 class="screen-form__title" style="font-size:clamp(1.8rem,7vw,2.6rem);">Place Your Bids</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:0.9rem;color:#ffe4a0;max-width:42ch;margin:var(--sp-3) auto var(--sp-4);line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+            Sealed-bid auction. Each lot's contents are hidden until close. You can update a bid until the deadline.
+          </p>
+        </div>
+        <div class="auction-grid" id="lots-grid">
+          ${lots.map(lot => `
+            <div class="lot" data-lot-id="${lot.id}">
+              <div class="lot__title">${lot.name}</div>
+              <div class="lot__desc">Hidden contents. Reward revealed when the auction closes.</div>
+              <div class="lot__bid-row">
+                <input class="lot__input" type="number" min="1" placeholder="Bid (credits)" value="${myBidsByLot[lot.id] ?? ""}">
+                <button class="lot__btn" data-action="bid">${myBidsByLot[lot.id] ? "Update" : "Place"}</button>
+              </div>
+              <div class="lot__status ${myBidsByLot[lot.id] ? "is-locked" : ""}" data-status>
+                ${myBidsByLot[lot.id] ? `Your bid: ${myBidsByLot[lot.id]} cr` : "No bid placed"}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      root.querySelectorAll(".lot").forEach(row => {
+        const btn = row.querySelector("[data-action='bid']");
+        const input = row.querySelector(".lot__input");
+        const statusEl = row.querySelector("[data-status]");
+        btn.addEventListener("click", async () => {
+          const amount = parseInt(input.value, 10);
+          if (!amount || amount <= 0) {
+            statusEl.textContent = "Enter a positive number.";
+            return;
+          }
+          btn.disabled = true;
+          statusEl.textContent = "Transmitting…";
+          try {
+            await submitAuctionBid({ lot_id: row.dataset.lotId, bidder_slug: tribute.slug, amount });
+            statusEl.textContent = `Your bid: ${amount} cr`;
+            statusEl.classList.add("is-locked");
+            btn.textContent = "Update";
+            btn.disabled = false;
+          } catch (err) {
+            console.error(err);
+            statusEl.textContent = "Failed — try again";
+            btn.disabled = false;
+          }
+        });
+      });
+    }
+
+    ensureAudioReady();
+    run().catch(err => { console.error(err); renderEmpty("Transmission error — check console."); });
+  </script>
+</body>
+</html>

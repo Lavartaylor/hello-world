@@ -290,6 +290,90 @@ export async function fetchBestWeaponScore(slug, week) {
   return data;
 }
 
+// --- Caption voting (W3 stage 2) ----------------------------------
+
+export async function voteCaption(caption_id, voter_slug) {
+  const { data, error } = await supabase
+    .from("hg_caption_votes")
+    .insert({ caption_id, voter_slug })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchCaptionVoteFromVoter(round_id, voter_slug) {
+  // Get all captions for the round so we know which ids the user could've voted on,
+  // then find any vote they cast against those captions.
+  const { data: captions } = await supabase
+    .from("hg_captions")
+    .select("id")
+    .eq("round_id", round_id);
+  const captionIds = (captions || []).map(c => c.id);
+  if (!captionIds.length) return null;
+  const { data, error } = await supabase
+    .from("hg_caption_votes")
+    .select("*")
+    .eq("voter_slug", voter_slug)
+    .in("caption_id", captionIds)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// --- Auction (W4) -------------------------------------------------
+
+export async function fetchActiveAuctionLots() {
+  const { data, error } = await supabase
+    .from("hg_auction_lots")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function submitAuctionBid({ lot_id, bidder_slug, amount }) {
+  const { data, error } = await supabase
+    .from("hg_auction_bids")
+    .upsert({ lot_id, bidder_slug, amount }, { onConflict: "lot_id,bidder_slug" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchMyBids(bidder_slug) {
+  const { data, error } = await supabase
+    .from("hg_auction_bids")
+    .select("*")
+    .eq("bidder_slug", bidder_slug);
+  if (error) throw error;
+  return data || [];
+}
+
+// --- Threat ballots (W5) ------------------------------------------
+
+export async function submitThreatBallot({ voter_slug, named_slugs, week = 5 }) {
+  const { data, error } = await supabase
+    .from("hg_threat_ballots")
+    .upsert({ voter_slug, named_slugs, week }, { onConflict: "voter_slug,week" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchThreatBallot(voter_slug, week = 5) {
+  const { data, error } = await supabase
+    .from("hg_threat_ballots")
+    .select("*")
+    .eq("voter_slug", voter_slug)
+    .eq("week", week)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 // --- Current week (used by /challenge dispatcher) -----------------
 
 // Hard-coded for now; can be moved into a config table later.

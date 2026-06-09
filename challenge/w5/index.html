@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Name The Threats — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    .threats-stack {
+      width: min(560px, 100%);
+      margin: var(--sp-4) auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+    }
+    .threat-slot {
+      background: rgba(0, 14, 30, 0.55);
+      border: 1.5px solid rgba(255, 220, 120, 0.22);
+      padding: var(--sp-3) var(--sp-4);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+    }
+    .threat-slot__rank {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.6rem;
+      color: #ff7070;
+      width: 32px;
+      text-align: center;
+      text-shadow: 0 0 12px rgba(255, 100, 100, 0.4);
+    }
+    .threat-slot select {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 220, 120, 0.35);
+      color: #fff8e0;
+      padding: 8px 12px;
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      outline: none;
+    }
+  </style>
+</head>
+<body class="broadcast" data-role="capitol">
+  <div class="crt">
+    <div class="crt__scrim"></div><div class="crt__static"></div><div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div><div class="crt__flicker"></div><div class="crt__bootflash"></div>
+  </div>
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">CH-W5 · NAME THE THREATS</span>
+      <div class="broadcast-hud" id="hud" hidden>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+      </div>
+    </header>
+    <main class="broadcast-main">
+      <div id="content"><p class="admin-empty">Loading transmission…</p></div>
+    </main>
+  </div>
+
+  <div class="tuner-knob is-disabled" id="tuner" hidden>
+    <div class="tuner-knob__label">Lock Ballot</div>
+    <button type="button" class="tuner-knob__dial" id="dial" disabled>
+      <div class="tuner-knob__indicator"></div>
+      <div class="tuner-knob__hub"></div>
+    </button>
+    <div class="tuner-knob__caption" id="dial-caption">Pick 3 to enable</div>
+  </div>
+
+  <script type="module">
+    import { ensureAudioReady } from "/scripts/audio.js";
+    import { fetchTribute, fetchTributes, submitThreatBallot, fetchThreatBallot } from "/scripts/supabase.js";
+    import { getSlug } from "/scripts/data.js";
+
+    let tribute = null;
+
+    function renderEmpty(msg) {
+      document.getElementById("content").innerHTML = `
+        <div style="text-align:center;padding-top:var(--sp-6);">
+          <h1 class="screen-form__title">Name the Threats</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:1rem;color:#ffe4a0;margin:var(--sp-4) auto;max-width:38ch;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">${msg}</p>
+        </div>
+      `;
+    }
+
+    function renderLocked(picks, tributesBySlug) {
+      const tuner = document.getElementById("tuner");
+      tuner.hidden = true;
+      document.getElementById("content").innerHTML = `
+        <div style="text-align:center;padding-top:var(--sp-5);">
+          <h1 class="screen-form__title">Ballot Locked</h1>
+          <p style="font-family:var(--font-utility);font-weight:500;font-size:0.85rem;color:#ad8a40;text-transform:uppercase;letter-spacing:0.04em;margin-top:var(--sp-3);">Your sealed threats:</p>
+          <div style="display:flex;flex-direction:column;gap:var(--sp-3);width:min(420px,100%);margin:var(--sp-4) auto 0;">
+            ${picks.map((slug, i) => {
+              const t = tributesBySlug[slug];
+              return `<div class="threat-slot">
+                <div class="threat-slot__rank">${i + 1}</div>
+                <div style="flex:1;font-family:var(--font-display);font-weight:800;color:#fff8e0;text-transform:uppercase;letter-spacing:0.02em;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+                  ${t ? t.name : slug}
+                </div>
+              </div>`;
+            }).join("")}
+          </div>
+          <p style="font-family:var(--font-utility);font-weight:500;font-size:0.75rem;color:#ad8a40;text-transform:uppercase;letter-spacing:0.04em;margin-top:var(--sp-5);">
+            The most-named tributes lose credits before the Final Bracket.
+          </p>
+        </div>
+      `;
+    }
+
+    async function run() {
+      const slug = getSlug();
+      tribute = slug ? await fetchTribute(slug) : null;
+      if (!tribute) return renderEmpty("No citizen detected. Use the personal link the Gamemakers sent you.");
+      document.getElementById("hud").hidden = false;
+      document.getElementById("hud-name").textContent = tribute.name.toUpperCase();
+
+      const data = await fetchTributes();
+      const tributesBySlug = Object.fromEntries(data.map(t => [t.slug, t]));
+      const eligible = data.filter(t => t.slug !== tribute.slug);
+
+      const existing = await fetchThreatBallot(tribute.slug, 5);
+      if (existing) return renderLocked(existing.named_slugs, tributesBySlug);
+
+      const root = document.getElementById("content");
+      root.innerHTML = `
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-utility);font-weight:700;font-size:0.85rem;color:#d4b870;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--sp-2);">Week 5 · Name the Threats</div>
+          <h1 class="screen-form__title" style="font-size:clamp(1.8rem,7vw,2.6rem);">Who's Most Dangerous?</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:0.9rem;color:#ffe4a0;max-width:42ch;margin:var(--sp-3) auto;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+            Pick 3 tributes you see as the biggest threats. The most-named lose credits before the Final Bracket.<br>
+            <span style="color:#ff7070;font-weight:700;">Anonymous. One ballot. No edits.</span>
+          </p>
+        </div>
+        <div class="threats-stack">
+          ${[1, 2, 3].map(i => `
+            <div class="threat-slot">
+              <div class="threat-slot__rank">${i}</div>
+              <select data-slot="${i}">
+                <option value="">— pick a tribute —</option>
+                ${eligible.map(t => `<option value="${t.slug}">${t.name} · D${String(t.district).padStart(2,"0")}</option>`).join("")}
+              </select>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      const tuner = document.getElementById("tuner");
+      const dial = document.getElementById("dial");
+      const caption = document.getElementById("dial-caption");
+      tuner.hidden = false;
+
+      function validate() {
+        const picks = [1, 2, 3].map(i => root.querySelector(`[data-slot="${i}"]`).value);
+        const filled = picks.every(p => p);
+        const unique = new Set(picks.filter(Boolean)).size === picks.filter(Boolean).length;
+        const ok = filled && unique;
+        dial.disabled = !ok;
+        tuner.classList.toggle("is-disabled", !ok);
+        caption.textContent = !filled ? "Pick 3 to enable" : (!unique ? "No duplicates" : "Turn to lock");
+        return ok ? picks : null;
+      }
+
+      root.querySelectorAll("select").forEach(s => s.addEventListener("change", validate));
+
+      dial.addEventListener("click", async () => {
+        const picks = validate();
+        if (!picks) return;
+        dial.disabled = true;
+        tuner.classList.add("is-active");
+        caption.textContent = "Transmitting…";
+        try {
+          await submitThreatBallot({ voter_slug: tribute.slug, named_slugs: picks, week: 5 });
+          tuner.classList.add("is-locked");
+          caption.textContent = "Locked";
+          setTimeout(() => renderLocked(picks, tributesBySlug), 600);
+        } catch (err) {
+          console.error(err);
+          dial.disabled = false;
+          tuner.classList.remove("is-active");
+          caption.textContent = "Failed — try again";
+        }
+      });
+    }
+
+    ensureAudioReady();
+    run().catch(err => { console.error(err); renderEmpty("Transmission error — check console."); });
+  </script>
+</body>
+</html>

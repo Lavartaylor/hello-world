@@ -190,11 +190,11 @@
     import { getSlug } from "/scripts/data.js";
 
     const WEAPONS = [
-      { id: "bow",       name: "Bow",       game: "Archery",         icon: "🏹", playable: false },
-      { id: "slingshot", name: "Slingshot", game: "Trajectory",      icon: "🎯", playable: false },
-      { id: "knife",     name: "Knife",     game: "Spinning Target", icon: "🔪", playable: false },
-      { id: "net",       name: "Net",       game: "Catch",           icon: "🕸️", playable: false },
-      { id: "tower",     name: "Tower",     game: "Falling Blocks",  icon: "🧱", playable: true  }
+      { id: "bow",       name: "Bow",       game: "Archery",         icon: "🏹", playable: true },
+      { id: "slingshot", name: "Slingshot", game: "Trajectory",      icon: "🎯", playable: true },
+      { id: "knife",     name: "Knife",     game: "Spinning Target", icon: "🔪", playable: true },
+      { id: "net",       name: "Net",       game: "Catch",           icon: "🕸️", playable: true },
+      { id: "tower",     name: "Tower",     game: "Falling Blocks",  icon: "🧱", playable: true }
     ];
     const WEEK = 1;
     let tribute = null;
@@ -272,19 +272,546 @@
     }
 
     function renderGame(weapon, currentBest) {
-      const root = document.getElementById("content");
-      if (weapon !== "tower") {
-        root.innerHTML = `
-          <div style="text-align:center;padding-top:var(--sp-6);">
-            <h1 class="screen-form__title">${WEAPONS.find(w => w.id === weapon)?.name ?? weapon}</h1>
-            <p style="font-family:var(--font-utility);font-weight:600;font-size:1rem;color:#ffe4a0;margin-top:var(--sp-4);max-width:36ch;margin-left:auto;margin-right:auto;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
-              Your weapon is locked, but this mini-game isn't built yet. The Gamemakers will deploy it before Week 1 opens.
-            </p>
-          </div>
-        `;
+      const MOUNTS = { tower: mountTower, bow: mountBow, slingshot: mountSlingshot, knife: mountKnife, net: mountNet };
+      const fn = MOUNTS[weapon];
+      if (!fn) {
+        document.getElementById("content").innerHTML = `<p class="admin-empty">Unknown weapon. Contact the Gamemakers.</p>`;
         return;
       }
-      mountTower(currentBest);
+      fn(currentBest);
+    }
+
+    // Shared helper — build a standard game shell with HUD + canvas + buttons
+    function gameShell({ title, hint, currentBest, buttonLabel = "Start" }) {
+      const root = document.getElementById("content");
+      root.innerHTML = `
+        <div class="tower-stage">
+          <div style="text-align:center;">
+            <h1 class="screen-form__title" style="font-size:clamp(1.5rem,5vw,2.2rem);">${title}</h1>
+            <p style="font-family:var(--font-utility);font-weight:600;font-size:0.85rem;color:#ffe4a0;margin-top:4px;text-shadow:0 1px 0 rgba(0,0,0,0.85);">${hint}</p>
+          </div>
+          <div class="tower-hud">
+            <div>Score: <span class="tower-hud__value" id="g-score">0</span></div>
+            <div>Best: <span class="tower-hud__value" id="g-best">${currentBest}</span></div>
+          </div>
+          <canvas class="tower-canvas" id="g-canvas"></canvas>
+          <div class="tower-msg" id="g-msg">Tap to begin</div>
+          <button class="tower-button" id="g-action">${buttonLabel}</button>
+        </div>
+      `;
+      const canvas = document.getElementById("g-canvas");
+      const ctx = canvas.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { W: rect.width, H: rect.height };
+      }
+      const dim = resize();
+      window.addEventListener("resize", resize);
+      return {
+        canvas, ctx,
+        W: dim.W, H: dim.H,
+        score: document.getElementById("g-score"),
+        best: document.getElementById("g-best"),
+        msg: document.getElementById("g-msg"),
+        action: document.getElementById("g-action")
+      };
+    }
+
+    function recordScore(weapon, score) {
+      submitWeaponScore({ slug: tribute.slug, weapon, score, week: WEEK }).catch(err => console.error("Score submit failed:", err));
+    }
+
+    // ====================================================================
+    // BOW — Drag bow back to set power, release to fire arrow at bullseye.
+    // 5 arrows per run, scored 100/80/60/40/20/0 by ring.
+    // ====================================================================
+    function mountBow(currentBest) {
+      const ui = gameShell({ title: "The Bow", hint: "Drag back from the bow, release to fire. 5 arrows.", currentBest });
+      let { W, H, score: scoreEl, best: bestEl, msg, action, canvas, ctx } = ui;
+      let arrowsLeft = 0, score = 0, best = currentBest, running = false, raf = null;
+      let drag = null;        // {sx,sy,x,y}
+      let arrow = null;       // {x,y,vx,vy}
+      let lastHit = null;     // {ring, points}
+      let wind = 0;
+
+      function reset() {
+        score = 0; arrowsLeft = 5; lastHit = null;
+        scoreEl.textContent = 0;
+        msg.textContent = "5 arrows. Drag from the bow and release.";
+        wind = (Math.random() - 0.5) * 0.4;
+        arrow = null; drag = null;
+        running = true;
+        action.textContent = "Reset";
+        loop();
+      }
+
+      function bowX() { return 80; }
+      function bowY() { return H / 2; }
+      function targetX() { return W - 70; }
+      function targetY() { return H / 2; }
+
+      function loop() {
+        if (!running) return;
+        ctx.clearRect(0, 0, W, H);
+
+        // wind arrow indicator
+        ctx.fillStyle = "rgba(255, 216, 112, 0.5)";
+        ctx.font = "12px monospace";
+        ctx.fillText(`Wind: ${wind > 0 ? "→" : "←"} ${Math.abs(wind).toFixed(2)}`, 8, 16);
+
+        // target rings
+        const rings = [{ r: 60, c: "#1a4a8a", p: 20 },
+                       { r: 48, c: "#1a8aa8", p: 40 },
+                       { r: 36, c: "#c8c8a0", p: 60 },
+                       { r: 24, c: "#e8a020", p: 80 },
+                       { r: 12, c: "#e84040", p: 100 }];
+        for (const r of rings) {
+          ctx.fillStyle = r.c;
+          ctx.beginPath();
+          ctx.arc(targetX(), targetY(), r.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(0,0,0,0.4)";
+          ctx.stroke();
+        }
+
+        // bow
+        ctx.strokeStyle = "#e8d49a";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(bowX(), bowY(), 30, -Math.PI/2, Math.PI/2);
+        ctx.stroke();
+
+        // drag line
+        if (drag) {
+          ctx.strokeStyle = "#ffd870";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(bowX(), bowY());
+          ctx.lineTo(drag.x, drag.y);
+          ctx.stroke();
+          ctx.fillStyle = "#ffd870";
+          ctx.beginPath();
+          ctx.arc(drag.x, drag.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // arrow in flight
+        if (arrow) {
+          arrow.vx += 0;
+          arrow.x += arrow.vx;
+          arrow.y += arrow.vy + (wind * 2);
+          arrow.vy += 0.12; // gravity
+          ctx.strokeStyle = "#fff8e0";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(arrow.x - 10, arrow.y);
+          ctx.lineTo(arrow.x, arrow.y);
+          ctx.stroke();
+
+          // check target hit / miss
+          const dx = arrow.x - targetX(), dy = arrow.y - targetY();
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (arrow.x > targetX() - 5 || arrow.x > W || arrow.y > H || arrow.y < 0) {
+            let pts = 0;
+            for (let i = rings.length - 1; i >= 0; i--) {
+              if (dist <= rings[i].r) { pts = rings[i].p; break; }
+            }
+            score += pts;
+            lastHit = pts;
+            arrowsLeft--;
+            arrow = null;
+            scoreEl.textContent = score;
+            msg.textContent = `Arrow: +${pts}. ${arrowsLeft} left.`;
+            if (arrowsLeft <= 0) endRun();
+            wind = (Math.random() - 0.5) * 0.4;
+          }
+        }
+
+        raf = requestAnimationFrame(loop);
+      }
+
+      function endRun() {
+        running = false;
+        cancelAnimationFrame(raf);
+        if (score > best) { best = score; bestEl.textContent = best; }
+        msg.textContent = `Run complete. ${score} pts. Tap Reset.`;
+        action.textContent = "Reset";
+        recordScore("bow", score);
+      }
+
+      function getPoint(e) {
+        const rect = canvas.getBoundingClientRect();
+        const t = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+      }
+
+      function dragStart(e) {
+        if (!running || arrow || arrowsLeft <= 0) return;
+        const p = getPoint(e);
+        if (Math.hypot(p.x - bowX(), p.y - bowY()) > 80) return;
+        drag = { sx: bowX(), sy: bowY(), x: p.x, y: p.y };
+      }
+      function dragMove(e) {
+        if (!drag) return;
+        e.preventDefault?.();
+        const p = getPoint(e);
+        drag.x = p.x; drag.y = p.y;
+      }
+      function dragEnd() {
+        if (!drag) return;
+        const dx = bowX() - drag.x, dy = bowY() - drag.y;
+        const power = Math.min(20, Math.hypot(dx, dy) / 8);
+        arrow = { x: bowX(), y: bowY(), vx: dx / 6 + power * 0.6, vy: dy / 6 };
+        drag = null;
+      }
+
+      canvas.addEventListener("mousedown", dragStart);
+      canvas.addEventListener("mousemove", dragMove);
+      canvas.addEventListener("mouseup", dragEnd);
+      canvas.addEventListener("touchstart", dragStart, { passive: false });
+      canvas.addEventListener("touchmove", dragMove, { passive: false });
+      canvas.addEventListener("touchend", dragEnd);
+      action.addEventListener("click", reset);
+      reset();
+    }
+
+    // ====================================================================
+    // SLINGSHOT — Tap arc launcher. Tap at apex of swing to release.
+    // 10 shots at swinging target. Score by hits + accuracy.
+    // ====================================================================
+    function mountSlingshot(currentBest) {
+      const ui = gameShell({ title: "The Slingshot", hint: "Tap to launch. Hit the bouncing target.", currentBest });
+      let { W, H, score: scoreEl, best: bestEl, msg, action, canvas, ctx } = ui;
+      let score = 0, best = currentBest, shotsLeft = 0, running = false, raf = null;
+      let angle = 0, angDir = 1;
+      let stone = null;
+      let target = { x: W * 0.7, y: H * 0.3, vx: 1.4, vy: 0.9, r: 22 };
+
+      function reset() {
+        score = 0; shotsLeft = 10;
+        scoreEl.textContent = 0;
+        msg.textContent = "Tap to fire stone. 10 shots.";
+        running = true;
+        target.x = W * 0.7; target.y = H * 0.3;
+        target.vx = 1 + Math.random() * 1.4; target.vy = 0.6 + Math.random() * 1;
+        loop();
+      }
+
+      function launcherX() { return 60; }
+      function launcherY() { return H - 60; }
+
+      function loop() {
+        if (!running) return;
+        ctx.clearRect(0, 0, W, H);
+
+        angle += angDir * 0.04;
+        if (angle > 1.2 || angle < 0.1) angDir *= -1;
+
+        // launcher
+        ctx.strokeStyle = "#e8d49a";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(launcherX() - 8, launcherY() + 20);
+        ctx.lineTo(launcherX() - 8 + Math.cos(angle) * 40, launcherY() + 20 - Math.sin(angle) * 40);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(launcherX() + 8, launcherY() + 20);
+        ctx.lineTo(launcherX() + 8 + Math.cos(angle) * 40, launcherY() + 20 - Math.sin(angle) * 40);
+        ctx.stroke();
+        ctx.fillStyle = "#ffd870";
+        ctx.beginPath();
+        ctx.arc(launcherX(), launcherY() + 20 - 8, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        // target
+        target.x += target.vx;
+        target.y += target.vy;
+        if (target.x < target.r + 100 || target.x > W - target.r) target.vx *= -1;
+        if (target.y < target.r + 10 || target.y > H - 100) target.vy *= -1;
+        ctx.fillStyle = "#e84040";
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, target.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#fff8e0";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // stone
+        if (stone) {
+          stone.x += stone.vx;
+          stone.y += stone.vy;
+          stone.vy += 0.2;
+          ctx.fillStyle = "#c8c8c8";
+          ctx.beginPath();
+          ctx.arc(stone.x, stone.y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          const d = Math.hypot(stone.x - target.x, stone.y - target.y);
+          if (d < target.r + 6) {
+            score += 10;
+            scoreEl.textContent = score;
+            stone = null;
+            msg.textContent = "Hit! +10";
+            target.x = 100 + Math.random() * (W - 200);
+            target.y = 30 + Math.random() * (H * 0.4);
+          } else if (stone.y > H || stone.x > W) {
+            stone = null;
+            msg.textContent = "Miss";
+          }
+        }
+
+        raf = requestAnimationFrame(loop);
+      }
+
+      function fire() {
+        if (!running || stone || shotsLeft <= 0) return;
+        const sp = 11;
+        stone = {
+          x: launcherX(),
+          y: launcherY() + 20 - 8,
+          vx: Math.cos(angle) * sp,
+          vy: -Math.sin(angle) * sp - 1
+        };
+        shotsLeft--;
+        if (shotsLeft === 0) setTimeout(endRun, 1200);
+      }
+
+      function endRun() {
+        running = false;
+        cancelAnimationFrame(raf);
+        if (score > best) { best = score; bestEl.textContent = best; }
+        msg.textContent = `Run complete. ${score} pts. Tap Reset.`;
+        action.textContent = "Reset";
+        recordScore("slingshot", score);
+      }
+
+      canvas.addEventListener("click", fire);
+      canvas.addEventListener("touchstart", (e) => { e.preventDefault(); fire(); }, { passive: false });
+      action.addEventListener("click", reset);
+      reset();
+    }
+
+    // ====================================================================
+    // KNIFE — Spinning target wheel. Tap to throw a knife. Avoid hitting
+    // existing knives. Score = knives stuck before collision.
+    // ====================================================================
+    function mountKnife(currentBest) {
+      const ui = gameShell({ title: "The Knife", hint: "Tap to throw. Don't hit the other knives.", currentBest });
+      let { W, H, score: scoreEl, best: bestEl, msg, action, canvas, ctx } = ui;
+      let score = 0, best = currentBest, running = false, raf = null;
+      const wheelR = 70;
+      let wheel = { x: W / 2, y: H * 0.35, rot: 0, speed: 0.02 };
+      let stuck = [];      // angles in wheel-local space
+      let inFlight = null; // {y, vy}
+      const baseY = H - 50;
+
+      function reset() {
+        score = 0; stuck = []; inFlight = null;
+        wheel.x = W / 2; wheel.y = H * 0.35; wheel.rot = 0;
+        wheel.speed = 0.018 + Math.random() * 0.01;
+        scoreEl.textContent = 0;
+        msg.textContent = "Tap to throw.";
+        running = true;
+        loop();
+      }
+
+      function loop() {
+        if (!running) return;
+        wheel.rot += wheel.speed;
+        ctx.clearRect(0, 0, W, H);
+
+        // wheel
+        ctx.fillStyle = "#8a5a30";
+        ctx.beginPath();
+        ctx.arc(wheel.x, wheel.y, wheelR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#3a1a08";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = "#ffd870";
+        ctx.beginPath();
+        ctx.arc(wheel.x, wheel.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // stuck knives
+        for (const a of stuck) {
+          const ang = a + wheel.rot;
+          const kx = wheel.x + Math.cos(ang) * wheelR;
+          const ky = wheel.y + Math.sin(ang) * wheelR;
+          ctx.save();
+          ctx.translate(kx, ky);
+          ctx.rotate(ang + Math.PI / 2);
+          drawKnife();
+          ctx.restore();
+        }
+
+        // ground knife (ready to throw)
+        if (!inFlight) {
+          ctx.save();
+          ctx.translate(W / 2, baseY);
+          drawKnife();
+          ctx.restore();
+        }
+
+        // in-flight knife
+        if (inFlight) {
+          inFlight.y += inFlight.vy;
+          inFlight.vy += 0.05;
+          ctx.save();
+          ctx.translate(W / 2, inFlight.y);
+          drawKnife();
+          ctx.restore();
+          // check arrival at wheel
+          const distToWheel = wheel.y + wheelR - inFlight.y;
+          if (distToWheel <= 0) {
+            const localAng = -Math.PI / 2 - wheel.rot;
+            // collision check
+            for (const a of stuck) {
+              const diff = Math.atan2(Math.sin(a - localAng), Math.cos(a - localAng));
+              if (Math.abs(diff) < 0.22) {
+                inFlight = null;
+                return endRun();
+              }
+            }
+            stuck.push(localAng);
+            score++;
+            scoreEl.textContent = score;
+            msg.textContent = `${score} stuck.`;
+            wheel.speed *= 1.06; // accelerate slightly
+            inFlight = null;
+          }
+        }
+
+        raf = requestAnimationFrame(loop);
+      }
+      function drawKnife() {
+        ctx.fillStyle = "#dcdcdc";
+        ctx.beginPath();
+        ctx.moveTo(-3, 0);
+        ctx.lineTo(3, 0);
+        ctx.lineTo(0, -28);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#3a2510";
+        ctx.fillRect(-4, 0, 8, 14);
+      }
+      function endRun() {
+        running = false;
+        cancelAnimationFrame(raf);
+        if (score > best) { best = score; bestEl.textContent = best; }
+        msg.textContent = `Collision. ${score} stuck. Tap Reset.`;
+        action.textContent = "Reset";
+        recordScore("knife", score);
+      }
+      function throwKnife() {
+        if (!running || inFlight) return;
+        inFlight = { y: baseY, vy: -10 };
+      }
+
+      canvas.addEventListener("click", throwKnife);
+      canvas.addEventListener("touchstart", (e) => { e.preventDefault(); throwKnife(); }, { passive: false });
+      action.addEventListener("click", reset);
+      reset();
+    }
+
+    // ====================================================================
+    // NET — Catch falling items by dragging the net left-right. 30-sec run.
+    // Score = total caught item value.
+    // ====================================================================
+    function mountNet(currentBest) {
+      const ui = gameShell({ title: "The Net", hint: "Drag the net. Catch the loot.", currentBest });
+      let { W, H, score: scoreEl, best: bestEl, msg, action, canvas, ctx } = ui;
+      let score = 0, best = currentBest, running = false, raf = null;
+      let net = { x: W / 2, w: 70 };
+      let items = [];
+      let timeLeft = 30, lastTick = 0;
+      const itemKinds = [
+        { c: "#ffd870", v: 5,  rare: 1 },
+        { c: "#86e870", v: 3,  rare: 0.6 },
+        { c: "#e84040", v: -3, rare: 0.3 } // sabotage
+      ];
+
+      function reset() {
+        score = 0; items = []; timeLeft = 30;
+        net.x = W / 2;
+        scoreEl.textContent = 0;
+        msg.textContent = "30 sec. Drag the net.";
+        running = true;
+        lastTick = performance.now();
+        loop();
+      }
+
+      function spawn() {
+        if (Math.random() < 0.05) {
+          const k = itemKinds[Math.floor(Math.random() * itemKinds.length)];
+          items.push({ x: 20 + Math.random() * (W - 40), y: -10, vy: 2 + Math.random() * 2, kind: k });
+        }
+      }
+
+      function loop() {
+        if (!running) return;
+        const now = performance.now();
+        if (now - lastTick > 1000) {
+          timeLeft -= Math.floor((now - lastTick) / 1000);
+          lastTick = now;
+          if (timeLeft <= 0) return endRun();
+        }
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = "#fff8e0";
+        ctx.font = "14px monospace";
+        ctx.fillText(`${timeLeft}s`, W - 40, 20);
+
+        spawn();
+        const netY = H - 30;
+        for (const it of items) it.y += it.vy;
+        for (let i = items.length - 1; i >= 0; i--) {
+          const it = items[i];
+          // draw
+          ctx.fillStyle = it.kind.c;
+          ctx.beginPath();
+          ctx.arc(it.x, it.y, 10, 0, Math.PI * 2);
+          ctx.fill();
+          if (it.y > netY && Math.abs(it.x - net.x) < net.w / 2) {
+            score += it.kind.v;
+            scoreEl.textContent = score;
+            items.splice(i, 1);
+          } else if (it.y > H + 20) {
+            items.splice(i, 1);
+          }
+        }
+        // net
+        ctx.fillStyle = "#3a2510";
+        ctx.fillRect(net.x - net.w / 2, netY, net.w, 14);
+        ctx.strokeStyle = "#ffd870";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(net.x - net.w / 2, netY, net.w, 14);
+
+        raf = requestAnimationFrame(loop);
+      }
+
+      function endRun() {
+        running = false;
+        cancelAnimationFrame(raf);
+        if (score > best) { best = score; bestEl.textContent = best; }
+        msg.textContent = `Time. ${score} pts. Tap Reset.`;
+        action.textContent = "Reset";
+        recordScore("net", score);
+      }
+
+      function moveTo(e) {
+        if (!running) return;
+        const rect = canvas.getBoundingClientRect();
+        const t = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        const x = t.clientX - rect.left;
+        net.x = Math.max(net.w / 2, Math.min(W - net.w / 2, x));
+      }
+      canvas.addEventListener("mousemove", moveTo);
+      canvas.addEventListener("touchmove", (e) => { e.preventDefault(); moveTo(e); }, { passive: false });
+      action.addEventListener("click", reset);
+      reset();
     }
 
     // ====================================================================
