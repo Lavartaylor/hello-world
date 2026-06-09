@@ -65,7 +65,9 @@
 
     function row(t, rank, freeze) {
       const district = String(t.district).padStart(2, "0");
-      const seal = `<img src="/assets/seals/district-${t.district}.png" alt="">`;
+      const seal = t.profile_photo
+        ? `<img src="${t.profile_photo}" alt="" style="object-fit:cover;border-radius:4px;border:1px solid rgba(255,220,120,0.4);">`
+        : `<img src="/assets/seals/district-${t.district}.png" alt="">`;
       const below = rank > freeze ? "leaderboard__row--below" : "";
       return `
         <div class="leaderboard__row ${below}">

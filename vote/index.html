@@ -169,7 +169,11 @@
         card.className = "vote-card";
         if (t.slug === voterTribute.slug) card.classList.add("vote-card--self");
         card.dataset.slug = t.slug;
+        const portrait = t.profilePhoto
+          ? `<img class="vote-card__portrait" src="${t.profilePhoto}" alt="">`
+          : `<img class="vote-card__portrait" src="/assets/seals/district-${t.district}.png" alt="" style="opacity:0.7;object-fit:contain;">`;
         card.innerHTML = `
+          ${portrait}
           <span class="vote-card__name">${t.name}</span>
           <span class="vote-card__district">District ${String(t.district).padStart(2, "0")}</span>
           <span class="vote-card__points">${(t.credits ?? 0).toLocaleString()}</span>

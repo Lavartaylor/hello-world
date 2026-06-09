@@ -31,7 +31,8 @@ export async function loadTributes() {
       trainingScore: t.training_score,
       credits: t.credits ?? 0,
       rsvpStatus: t.rsvp_status,
-      isFinalist: t.is_finalist
+      isFinalist: t.is_finalist,
+      profilePhoto: t.profile_photo || null
     }))
   };
 }

@@ -1938,6 +1938,20 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   transform: translateY(-2px);
 }
 
+.vote-card__portrait {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto var(--sp-3);
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1.5px solid rgba(255, 220, 120, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.vote-card.is-selected .vote-card__portrait {
+  border-color: #ffd870;
+  box-shadow: 0 0 20px rgba(255, 216, 112, 0.35), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
 .vote-card__name {
   display: block;
   font-family: var(--font-display);

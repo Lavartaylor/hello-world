@@ -87,22 +87,22 @@
           </fieldset>
 
           <div class="rsvp-field rsvp-field--full rsvp-photo">
-            <span class="rsvp-label">Capitol portrait (optional)</span>
+            <span class="rsvp-label">Capitol portrait (required)</span>
 
             <div class="rsvp-photo__empty" id="photo-empty">
-              <button type="button" class="key key--small is-ready" id="photo-add-btn">Open camera</button>
-              <span class="rsvp-photo__hint">Or skip — your initials will be used</span>
+              <button type="button" class="key key--small is-ready" id="photo-add-btn">Capture portrait</button>
+              <span class="rsvp-photo__hint">Required — your portrait identifies you across every transmission</span>
             </div>
 
             <div class="rsvp-photo__filled" id="photo-filled" hidden>
               <img class="rsvp-photo__preview" id="photo-preview" alt="">
               <div class="rsvp-photo__filled-info">
-                <span class="rsvp-photo__status">Portrait recorded</span>
+                <span class="rsvp-photo__status">Portrait on file</span>
                 <button type="button" class="rsvp-photo__retake" id="photo-clear-btn">Retake</button>
               </div>
             </div>
 
-            <input type="hidden" name="profile_photo" id="profile-photo-input">
+            <input type="hidden" name="profile_photo" id="profile-photo-input" required>
           </div>
 
           <div id="companion-fields" class="rsvp-companions" hidden></div>
@@ -229,10 +229,15 @@
       const tuner = document.getElementById("tuner");
       const dial = document.getElementById("tuner-dial");
       const caption = document.getElementById("tuner-caption");
-      const isValid = form.checkValidity();
+      const photoInput = document.getElementById("profile-photo-input");
+      const formOk = form.checkValidity();
+      const photoOk = !!photoInput.value;
+      const isValid = formOk && photoOk;
       tuner.classList.toggle("is-disabled", !isValid);
       dial.disabled = !isValid;
-      caption.textContent = isValid ? "Turn to transmit" : "Complete the form to enable";
+      caption.textContent = isValid
+        ? "Turn to transmit"
+        : (!photoOk ? "Portrait required to transmit" : "Complete the form to enable");
     }
     document.getElementById("rsvp-form").addEventListener("input", validateForm);
     document.getElementById("rsvp-form").addEventListener("change", validateForm);
@@ -322,6 +327,7 @@
       photoEmpty.hidden = true;
       photoFilled.hidden = false;
       closeCamera();
+      validateForm();
     });
 
     // "Retake" — clears the saved photo and re-opens the camera
@@ -330,6 +336,7 @@
       photoPreview.src = "";
       photoFilled.hidden = true;
       photoEmpty.hidden = false;
+      validateForm();
       openCamera();
     });
 

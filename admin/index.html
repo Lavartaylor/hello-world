@@ -242,7 +242,10 @@
           btn.disabled = true;
           btn.textContent = "Promoting…";
           try {
-            await createTribute({ slug, name, district, role, credits: 0 });
+            // Pull the RSVP's photo so it follows the tribute through every page
+            const rsvp = state.rsvps.find(r => r.id === rsvpId);
+            const profile_photo = rsvp?.profile_photo || null;
+            await createTribute({ slug, name, district, role, credits: 0, profile_photo });
             // If this was the last unpromoted person on the RSVP, mark RSVP promoted
             const rsvp = state.rsvps.find(r => r.id === rsvpId);
             const allOnRsvp = [rsvp.name, ...(rsvp.companion_names || [])];
@@ -277,9 +280,13 @@
         </div>
       `;
       const sorted = [...state.tributes].sort((a, b) => (b.credits || 0) - (a.credits || 0));
-      const rows = sorted.map(t => `
+      const rows = sorted.map(t => {
+        const avatar = t.profile_photo
+          ? `<img src="${t.profile_photo}" alt="" style="object-fit:cover;border-radius:4px;border:1px solid rgba(255,220,120,0.4);">`
+          : `<img src="/assets/seals/district-${t.district}.png" alt="">`;
+        return `
         <div class="admin-row" data-slug="${t.slug}">
-          <div class="admin-row__seal"><img src="/assets/seals/district-${t.district}.png" alt=""></div>
+          <div class="admin-row__seal">${avatar}</div>
           <div>
             <div style="font-weight:800;color:#fff8e0;text-transform:uppercase;font-size:0.95rem;">${t.name}</div>
             <div style="font-size:0.7rem;color:rgba(255,248,224,0.55);text-transform:uppercase;letter-spacing:0.04em;">/${t.slug}</div>
@@ -290,7 +297,8 @@
           <input class="admin-input" type="number" data-field="training_score" value="${t.trainingScore ?? ""}" min="1" max="12" placeholder="—">
           <button class="admin-btn" data-action="save">Save</button>
         </div>
-      `).join("");
+      `;
+      }).join("");
 
       wrap.innerHTML = header + rows;
 
