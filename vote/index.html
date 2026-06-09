@@ -106,7 +106,14 @@
       if (!voterTribute) {
         document.getElementById("heading").textContent = "NO SIGNAL";
         document.getElementById("subheading").textContent = "Terminal not recognized";
-        document.getElementById("body").textContent = "Only registered citizens may place opening bets. Present yourself to the Gamemakers.";
+        document.getElementById("body").innerHTML = `
+          No citizen detected. Test as one of the demo tributes:
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
+            <a class="key key--small is-ready" href="/vote/lavar" style="text-decoration:none;">LaVar</a>
+            <a class="key key--small is-ready" href="/vote/rachel" style="text-decoration:none;">Rachel</a>
+            <a class="key key--small is-ready" href="/vote/demo" style="text-decoration:none;">Demo</a>
+          </div>
+        `;
         document.getElementById("hud").style.display = "none";
         return;
       }

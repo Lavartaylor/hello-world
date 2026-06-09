@@ -107,7 +107,14 @@
       if (!tribute) {
         document.getElementById("heading").textContent = "NO SIGNAL";
         document.getElementById("subheading").textContent = "Terminal not recognized";
-        document.getElementById("body").textContent = "If you believe this is in error, present yourself to the Gamemakers.";
+        document.getElementById("body").innerHTML = `
+          No citizen detected. Test as one of the demo tributes:
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
+            <a class="key key--small is-ready" href="/tv/lavar" style="text-decoration:none;">LaVar</a>
+            <a class="key key--small is-ready" href="/tv/rachel" style="text-decoration:none;">Rachel</a>
+            <a class="key key--small is-ready" href="/tv/demo" style="text-decoration:none;">Demo</a>
+          </div>
+        `;
         document.getElementById("hud").style.display = "none";
         return;
       }
