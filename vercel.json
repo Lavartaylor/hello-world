@@ -14,7 +14,9 @@
     { "source": "/challenge/w:n/:slug", "destination": "/challenge/w:n" },
     { "source": "/challenge/w:n/:slug/", "destination": "/challenge/w:n" },
     { "source": "/loadout/:slug", "destination": "/loadout" },
-    { "source": "/loadout/:slug/", "destination": "/loadout" }
+    { "source": "/loadout/:slug/", "destination": "/loadout" },
+    { "source": "/meter/:slug", "destination": "/meter" },
+    { "source": "/meter/:slug/", "destination": "/meter" }
   ],
   "headers": [
     {

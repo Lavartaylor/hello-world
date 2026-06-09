@@ -482,6 +482,7 @@
           <div>Role</div>
           <div>Credits</div>
           <div>Train</div>
+          <div>Final 6</div>
           <div></div>
         </div>
       `;
@@ -501,6 +502,9 @@
           <select class="admin-select" data-field="role">${roleOptions(t.role)}</select>
           <input class="admin-input" type="number" data-field="credits" value="${t.credits ?? 0}">
           <input class="admin-input" type="number" data-field="training_score" value="${t.trainingScore ?? ""}" min="1" max="12" placeholder="—">
+          <label style="display:flex;justify-content:center;align-items:center;">
+            <input type="checkbox" data-field="is_finalist" ${t.is_finalist ? "checked" : ""} style="width:18px;height:18px;accent-color:#ffd870;cursor:pointer;">
+          </label>
           <button class="admin-btn" data-action="save">Save</button>
         </div>
       `;
@@ -517,6 +521,7 @@
             district: parseInt(row.querySelector('[data-field="district"]').value, 10),
             role: row.querySelector('[data-field="role"]').value,
             credits: parseInt(row.querySelector('[data-field="credits"]').value, 10) || 0,
+            is_finalist: row.querySelector('[data-field="is_finalist"]').checked,
             updated_at: new Date().toISOString()
           };
           const ts = row.querySelector('[data-field="training_score"]').value;

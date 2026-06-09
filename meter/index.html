@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Halloween Meter — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    .countdown {
+      text-align: center;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: clamp(1.4rem, 5vw, 2.4rem);
+      color: #ffd870;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin: var(--sp-3) 0 var(--sp-5);
+      text-shadow:
+        -1px 0 rgba(0, 0, 0, 0.9),
+        1px 0 rgba(0, 0, 0, 0.9),
+        0 -1px rgba(0, 0, 0, 0.9),
+        0 1px rgba(0, 0, 0, 0.9),
+        0 0 24px rgba(255, 216, 112, 0.5);
+    }
+    .countdown__label {
+      display: block;
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: #d4b870;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .countdown.is-closed { color: #ff5050; }
+
+    .meter-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: var(--sp-3);
+      width: min(900px, 100%);
+      margin: 0 auto;
+    }
+    @media (max-width: 700px) {
+      .meter-grid { grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+    }
+    .meter-card {
+      background: rgba(0, 14, 30, 0.55);
+      border: 1.5px solid rgba(255, 220, 120, 0.22);
+      padding: var(--sp-3) var(--sp-2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: #fff8e0;
+      font-family: var(--font-utility);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+      position: relative;
+    }
+    .meter-card.is-top4 {
+      border-color: #ffd870;
+      box-shadow: 0 0 18px rgba(255, 216, 112, 0.35);
+    }
+    .meter-card.is-cut { opacity: 0.55; }
+    .meter-card__rank {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: #ffd870;
+      letter-spacing: 0;
+    }
+    .meter-card.is-cut .meter-card__rank { color: #ff7070; }
+    .meter-card__portrait {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1.5px solid rgba(255, 220, 120, 0.4);
+    }
+    .meter-card__name {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      text-align: center;
+      line-height: 1.1;
+      min-height: 1.9em;
+    }
+    .meter-card__bar {
+      width: 100%;
+      height: clamp(120px, 30vh, 280px);
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 220, 120, 0.25);
+      display: flex;
+      align-items: flex-end;
+      position: relative;
+      overflow: hidden;
+    }
+    .meter-card__fill {
+      width: 100%;
+      background: linear-gradient(180deg, #ffd870 0%, #d6a020 100%);
+      transition: height 0.4s ease;
+      box-shadow: 0 0 16px rgba(255, 216, 112, 0.5);
+    }
+    .meter-card__credits {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1rem;
+      color: #ffd870;
+      letter-spacing: 0;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85), 0 0 8px rgba(255, 216, 112, 0.4);
+    }
+    .meter-card__donate {
+      width: 100%;
+      display: flex;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .meter-card__donate input {
+      flex: 1;
+      min-width: 0;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 220, 120, 0.3);
+      color: #fff8e0;
+      padding: 4px 6px;
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-align: center;
+      outline: none;
+    }
+    .meter-card__donate button {
+      padding: 4px 8px;
+      background: linear-gradient(180deg, #3a3530, #1a1714);
+      border: 1px solid rgba(255, 220, 120, 0.4);
+      color: #ffd870;
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .meter-card__donate button:disabled { opacity: 0.4; cursor: default; }
+
+    .meter-msg {
+      text-align: center;
+      font-family: var(--font-utility);
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #ffe4a0;
+      margin-top: var(--sp-4);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+      min-height: 1.4em;
+    }
+  </style>
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="crt">
+    <div class="crt__scrim"></div><div class="crt__static"></div><div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div><div class="crt__flicker"></div><div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">HALLOWEEN · LIVE METER</span>
+      <div class="broadcast-hud" id="hud" hidden>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+        <div class="broadcast-hud__row broadcast-hud__row--points">
+          <span class="broadcast-hud__label">Credits</span>
+          <span class="broadcast-hud__value" id="hud-credits">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <div id="content"><p class="admin-empty">Loading transmission…</p></div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { ensureAudioReady, dingBell } from "/scripts/audio.js";
+    import {
+      fetchTribute, fetchFinalists, donateToFinalist, HALLOWEEN_CUTOFF
+    } from "/scripts/supabase.js";
+    import { getSlug } from "/scripts/data.js";
+
+    let tribute = null;
+    let finalists = [];
+    let countdownTimer = null;
+    let pollTimer = null;
+
+    function fmtCountdown() {
+      const now = new Date();
+      const diff = HALLOWEEN_CUTOFF.getTime() - now.getTime();
+      if (diff <= 0) return { closed: true, text: "🔒 METER CLOSED" };
+      const days = Math.floor(diff / 86400000);
+      const hrs = Math.floor((diff % 86400000) / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      return {
+        closed: false,
+        text: `${days}d ${String(hrs).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`
+      };
+    }
+
+    function paintCountdown() {
+      const el = document.getElementById("countdown");
+      if (!el) return;
+      const { closed, text } = fmtCountdown();
+      el.textContent = text;
+      el.classList.toggle("is-closed", closed);
+    }
+
+    function renderEmpty(msg) {
+      document.getElementById("content").innerHTML = `
+        <div style="text-align:center;padding-top:var(--sp-6);">
+          <h1 class="screen-form__title">Halloween Meter</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:1rem;color:#ffe4a0;margin:var(--sp-4) auto;max-width:38ch;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">${msg}</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:var(--sp-4);">
+            <a class="key key--small is-ready" href="/meter/demo" style="text-decoration:none;">Demo</a>
+          </div>
+        </div>
+      `;
+    }
+
+    async function refreshFinalists() {
+      finalists = await fetchFinalists();
+      paintGrid();
+    }
+
+    async function paintGrid() {
+      const max = Math.max(1, ...finalists.map(f => f.credits ?? 0));
+      const sorted = [...finalists].sort((a, b) => (b.credits ?? 0) - (a.credits ?? 0));
+      const grid = document.getElementById("meter-grid");
+      if (!grid) return;
+
+      const isCapitol = tribute && !tribute.is_finalist;
+      const cutoffClosed = fmtCountdown().closed;
+
+      grid.innerHTML = sorted.map((f, i) => {
+        const pct = Math.round(((f.credits ?? 0) / max) * 100);
+        const isTop4 = i < 4;
+        const portrait = f.profile_photo
+          ? `<img class="meter-card__portrait" src="${f.profile_photo}" alt="">`
+          : `<img class="meter-card__portrait" src="/assets/seals/district-${f.district}.png" alt="">`;
+        const donateUi = isCapitol && !cutoffClosed && tribute.slug !== f.slug
+          ? `<div class="meter-card__donate">
+              <input type="number" min="1" max="${tribute.credits ?? 0}" placeholder="cr" data-input="${f.slug}">
+              <button data-donate="${f.slug}">Send</button>
+            </div>`
+          : "";
+
+        return `
+          <div class="meter-card ${isTop4 ? "is-top4" : "is-cut"}">
+            <div class="meter-card__rank">#${i + 1}</div>
+            ${portrait}
+            <div class="meter-card__name">${f.name}</div>
+            <div class="meter-card__bar"><div class="meter-card__fill" style="height:${pct}%;"></div></div>
+            <div class="meter-card__credits">${(f.credits ?? 0).toLocaleString()}</div>
+            ${donateUi}
+          </div>
+        `;
+      }).join("");
+
+      grid.querySelectorAll("[data-donate]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const finalistSlug = btn.dataset.donate;
+          const input = grid.querySelector(`[data-input="${finalistSlug}"]`);
+          const amt = parseInt(input.value, 10);
+          if (!amt || amt <= 0) return;
+          const msgEl = document.getElementById("meter-msg");
+          btn.disabled = true;
+          btn.textContent = "…";
+          try {
+            await donateToFinalist({ bettor_slug: tribute.slug, finalist_slug: finalistSlug, amount: amt });
+            dingBell({ volume: 0.08 });
+            msgEl.textContent = `Sent ${amt} cr to ${finalists.find(f => f.slug === finalistSlug)?.name}.`;
+            // Refresh self + finalists
+            const t = await fetchTribute(tribute.slug);
+            tribute = t;
+            document.getElementById("hud-credits").textContent = (t.credits ?? 0).toLocaleString();
+            await refreshFinalists();
+          } catch (err) {
+            console.error(err);
+            msgEl.textContent = `Failed: ${err.message || "try again"}`;
+            btn.disabled = false;
+            btn.textContent = "Send";
+          }
+        });
+      });
+    }
+
+    async function run() {
+      const slug = getSlug();
+      tribute = slug ? await fetchTribute(slug) : null;
+
+      finalists = await fetchFinalists();
+
+      if (!finalists.length) {
+        renderEmpty("Gamemakers haven't locked the Final 6 yet. Check back when the party starts.");
+        return;
+      }
+
+      // Reveal HUD if we have a tribute
+      if (tribute) {
+        document.getElementById("hud").hidden = false;
+        document.getElementById("hud-name").textContent = tribute.name.toUpperCase();
+        document.getElementById("hud-credits").textContent = (tribute.credits ?? 0).toLocaleString();
+      }
+
+      const isCapitol = tribute && !tribute.is_finalist;
+      const isFinalist = tribute && tribute.is_finalist;
+      const viewerHint = !tribute
+        ? "Public view — no donations possible without a slug."
+        : isFinalist
+          ? "You're a finalist. Watch the meter."
+          : "Capitol citizen — donate credits to back your pick.";
+
+      document.getElementById("content").innerHTML = `
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-utility);font-weight:700;font-size:0.85rem;color:#d4b870;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--sp-2);">Halloween Night · Final 6</div>
+          <div class="countdown" id="countdown">—</div>
+          <div class="countdown__label">until cutoff · Oct 31 · 9:30 PM</div>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:0.85rem;color:#ffe4a0;max-width:42ch;margin:var(--sp-3) auto;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+            Top 4 by credits when the timer hits zero advance to the Arena.<br>
+            <span style="color:#d4b870;">${viewerHint}</span>
+          </p>
+        </div>
+        <div class="meter-grid" id="meter-grid"></div>
+        <div class="meter-msg" id="meter-msg"></div>
+      `;
+
+      paintCountdown();
+      paintGrid();
+
+      // Update countdown every second
+      countdownTimer = setInterval(paintCountdown, 1000);
+      // Poll finalists every 5 sec so everyone sees donations live
+      pollTimer = setInterval(refreshFinalists, 5000);
+    }
+
+    ensureAudioReady();
+    run().catch(err => { console.error(err); renderEmpty("Transmission error — check console."); });
+  </script>
+</body>
+</html>

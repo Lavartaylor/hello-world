@@ -453,6 +453,65 @@ export async function buyLoadoutItem({ tribute_slug, item_id }) {
   return { purchase, newBalance };
 }
 
+// --- Halloween Meter (Final 6 → Top 4) ---------------------------
+
+// Hardcoded cutoff: 9:30 PM Mountain Daylight on Halloween 2026.
+// Capitol donations close at this moment; top 4 by credits advance to /loadout.
+export const HALLOWEEN_CUTOFF = new Date("2026-10-31T21:30:00-06:00");
+
+export async function fetchFinalists() {
+  const { data, error } = await supabase
+    .from("hg_tributes")
+    .select("*")
+    .eq("is_finalist", true)
+    .order("credits", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// Capitol/Slums donates credits to a finalist. Atomic-ish: decrements bettor,
+// increments finalist, logs the bet. Slug-as-URL auth model.
+export async function donateToFinalist({ bettor_slug, finalist_slug, amount }) {
+  if (amount <= 0) throw new Error("Amount must be positive");
+  if (bettor_slug === finalist_slug) throw new Error("Cannot donate to yourself");
+
+  // 1. Look up bettor + finalist fresh
+  const [{ data: bettor }, { data: finalist }] = await Promise.all([
+    supabase.from("hg_tributes").select("slug,credits,is_finalist").eq("slug", bettor_slug).maybeSingle(),
+    supabase.from("hg_tributes").select("slug,credits,is_finalist").eq("slug", finalist_slug).maybeSingle()
+  ]);
+  if (!bettor)   throw new Error("Bettor not found");
+  if (!finalist) throw new Error("Finalist not found");
+  if (!finalist.is_finalist) throw new Error("Target is not a finalist");
+
+  // 2. Affordability check
+  const bettorBal = bettor.credits ?? 0;
+  if (bettorBal < amount) throw new Error(`Insufficient credits (need ${amount}, have ${bettorBal})`);
+
+  // 3. Decrement bettor
+  const { error: bErr } = await supabase
+    .from("hg_tributes")
+    .update({ credits: bettorBal - amount })
+    .eq("slug", bettor_slug);
+  if (bErr) throw bErr;
+
+  // 4. Increment finalist
+  const finalistBal = finalist.credits ?? 0;
+  const { error: fErr } = await supabase
+    .from("hg_tributes")
+    .update({ credits: finalistBal + amount })
+    .eq("slug", finalist_slug);
+  if (fErr) throw fErr;
+
+  // 5. Log the bet for Top Capitol Bettor tally later
+  const { error: lErr } = await supabase
+    .from("hg_meter_bets")
+    .insert({ bettor_slug, finalist_slug, credits: amount });
+  if (lErr) throw lErr;
+
+  return { newBettorBalance: bettorBal - amount, newFinalistBalance: finalistBal + amount };
+}
+
 // Event state flags (loadout_open / loadout_locked / credit_frozen, etc.)
 export async function fetchEventStateFlag(key) {
   const { data, error } = await supabase

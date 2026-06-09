@@ -43,8 +43,8 @@ export function getSlug() {
   const fromQuery = params.get("slug");
   if (fromQuery) return fromQuery.trim().toLowerCase();
 
-  // Fallback: parse /tv/{slug}/, /vote/{slug}/, /shop/{slug}/, /challenge/{slug}/, /loadout/{slug}/
-  const m = location.pathname.match(/\/(?:tv|vote|shop|challenge|loadout)\/([^\/]+)\/?/);
+  // Fallback: parse /tv/{slug}/, /vote/{slug}/, /shop/{slug}/, /challenge/{slug}/, /loadout/{slug}/, /meter/{slug}/
+  const m = location.pathname.match(/\/(?:tv|vote|shop|challenge|loadout|meter)\/([^\/]+)\/?/);
   if (m) return m[1].trim().toLowerCase();
 
   return null;
