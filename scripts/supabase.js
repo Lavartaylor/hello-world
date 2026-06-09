@@ -23,7 +23,7 @@ export async function fetchTributes() {
   const { data, error } = await supabase
     .from("hg_tributes")
     .select("*")
-    .order("points", { ascending: false });
+    .order("credits", { ascending: false });
   if (error) throw error;
   return data || [];
 }

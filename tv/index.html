@@ -44,8 +44,8 @@
           <span class="broadcast-hud__value" id="hud-district">—</span>
         </div>
         <div class="broadcast-hud__row broadcast-hud__row--points">
-          <span class="broadcast-hud__label">Points</span>
-          <span class="broadcast-hud__value" id="hud-points">0</span>
+          <span class="broadcast-hud__label">Credits</span>
+          <span class="broadcast-hud__value" id="hud-credits">0</span>
         </div>
       </div>
     </header>
@@ -115,7 +115,7 @@
       // Populate citizen HUD
       document.getElementById("hud-name").textContent = tribute.name.toUpperCase();
       document.getElementById("hud-district").textContent = String(tribute.district).padStart(2, "0");
-      document.getElementById("hud-points").textContent = (tribute.points ?? 0).toLocaleString();
+      document.getElementById("hud-credits").textContent = (tribute.credits ?? 0).toLocaleString();
 
       ensureAudioReady({
         onReady: async () => {

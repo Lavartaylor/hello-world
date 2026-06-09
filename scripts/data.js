@@ -29,7 +29,6 @@ export async function loadTributes() {
       district: t.district,
       role: t.role,
       trainingScore: t.training_score,
-      points: t.points ?? 0,
       credits: t.credits ?? 0,
       rsvpStatus: t.rsvp_status,
       isFinalist: t.is_finalist

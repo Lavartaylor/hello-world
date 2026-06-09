@@ -44,8 +44,8 @@
           <span class="broadcast-hud__value" id="hud-district">—</span>
         </div>
         <div class="broadcast-hud__row broadcast-hud__row--points">
-          <span class="broadcast-hud__label">Points</span>
-          <span class="broadcast-hud__value" id="hud-points">0</span>
+          <span class="broadcast-hud__label">Credits</span>
+          <span class="broadcast-hud__value" id="hud-credits">0</span>
         </div>
       </div>
     </header>
@@ -114,7 +114,7 @@
       // HUD
       document.getElementById("hud-name").textContent = voterTribute.name.toUpperCase();
       document.getElementById("hud-district").textContent = String(voterTribute.district).padStart(2, "0");
-      document.getElementById("hud-points").textContent = (voterTribute.points ?? 0).toLocaleString();
+      document.getElementById("hud-credits").textContent = (voterTribute.credits ?? 0).toLocaleString();
 
       // Has this citizen already voted?
       const existingVote = await fetchVote(voterTribute.slug);
@@ -161,8 +161,8 @@
       const grid = document.getElementById("vote-grid");
       grid.hidden = false;
       grid.innerHTML = "";
-      // Sort by points desc so the leaders are first
-      const sorted = [...allTributes].sort((a, b) => (b.points || 0) - (a.points || 0));
+      // Sort by credits desc so the leaders are first
+      const sorted = [...allTributes].sort((a, b) => (b.credits || 0) - (a.credits || 0));
       for (const t of sorted) {
         const card = document.createElement("button");
         card.type = "button";
@@ -172,8 +172,8 @@
         card.innerHTML = `
           <span class="vote-card__name">${t.name}</span>
           <span class="vote-card__district">District ${String(t.district).padStart(2, "0")}</span>
-          <span class="vote-card__points">${(t.points ?? 0).toLocaleString()}</span>
-          <span class="vote-card__points-label">Points</span>
+          <span class="vote-card__points">${(t.credits ?? 0).toLocaleString()}</span>
+          <span class="vote-card__points-label">Credits</span>
         `;
         card.addEventListener("click", () => selectCard(t.slug));
         grid.appendChild(card);

@@ -242,7 +242,7 @@
           btn.disabled = true;
           btn.textContent = "Promoting…";
           try {
-            await createTribute({ slug, name, district, role, points: 0, credits: 0 });
+            await createTribute({ slug, name, district, role, credits: 0 });
             // If this was the last unpromoted person on the RSVP, mark RSVP promoted
             const rsvp = state.rsvps.find(r => r.id === rsvpId);
             const allOnRsvp = [rsvp.name, ...(rsvp.companion_names || [])];
@@ -271,13 +271,12 @@
           <div>Name / Slug</div>
           <div>District</div>
           <div>Role</div>
-          <div>Points</div>
           <div>Credits</div>
           <div>Train</div>
           <div></div>
         </div>
       `;
-      const sorted = [...state.tributes].sort((a, b) => (b.points || 0) - (a.points || 0));
+      const sorted = [...state.tributes].sort((a, b) => (b.credits || 0) - (a.credits || 0));
       const rows = sorted.map(t => `
         <div class="admin-row" data-slug="${t.slug}">
           <div class="admin-row__seal"><img src="/assets/seals/district-${t.district}.png" alt=""></div>
@@ -287,7 +286,6 @@
           </div>
           <select class="admin-select" data-field="district">${districtOptions(t.district)}</select>
           <select class="admin-select" data-field="role">${roleOptions(t.role)}</select>
-          <input class="admin-input" type="number" data-field="points" value="${t.points ?? 0}">
           <input class="admin-input" type="number" data-field="credits" value="${t.credits ?? 0}">
           <input class="admin-input" type="number" data-field="training_score" value="${t.trainingScore ?? ""}" min="1" max="12" placeholder="—">
           <button class="admin-btn" data-action="save">Save</button>
@@ -304,7 +302,6 @@
           const patch = {
             district: parseInt(row.querySelector('[data-field="district"]').value, 10),
             role: row.querySelector('[data-field="role"]').value,
-            points: parseInt(row.querySelector('[data-field="points"]').value, 10) || 0,
             credits: parseInt(row.querySelector('[data-field="credits"]').value, 10) || 0,
             updated_at: new Date().toISOString()
           };
