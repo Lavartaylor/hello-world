@@ -117,3 +117,63 @@ export async function recordPurchase({ buyer_slug, target_slug, item_id, cost, e
   if (error) throw error;
   return data;
 }
+
+// --- Admin / Gamemaker Console ------------------------------------
+
+export async function fetchRsvps() {
+  const { data, error } = await supabase
+    .from("hg_rsvps")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function markRsvpPromoted(id) {
+  const { error } = await supabase
+    .from("hg_rsvps")
+    .update({ promoted_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function createTribute(payload) {
+  const { data, error } = await supabase
+    .from("hg_tributes")
+    .insert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTribute(slug, patch) {
+  const { data, error } = await supabase
+    .from("hg_tributes")
+    .update(patch)
+    .eq("slug", slug)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchRecentVotes(limit = 20) {
+  const { data, error } = await supabase
+    .from("hg_votes")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchRecentPurchases(limit = 20) {
+  const { data, error } = await supabase
+    .from("hg_purchases")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data || [];
+}

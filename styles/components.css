@@ -1618,6 +1618,274 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
 }
 
 /* ========================================================
+   Gamemaker Console — admin dashboard
+   Information-dense, less drama than the dramatic broadcast pages
+   ======================================================== */
+.admin-main {
+  max-width: 1180px;
+  text-align: left;
+  align-items: stretch !important;
+}
+.admin-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  width: 100%;
+  margin-top: var(--sp-4);
+}
+.admin-section {
+  background: rgba(0, 14, 30, 0.5);
+  border: 1px solid rgba(255, 220, 120, 0.18);
+  padding: var(--sp-4) var(--sp-5);
+}
+.admin-section__title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  color: #ffd870;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid rgba(255, 220, 120, 0.18);
+  text-shadow:
+    -1px 0 rgba(0, 0, 0, 0.85),
+    1px 0 rgba(0, 0, 0, 0.85),
+    0 -1px rgba(0, 0, 0, 0.85),
+    0 1px rgba(0, 0, 0, 0.85);
+}
+.admin-section__count {
+  font-family: var(--font-utility);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #d4b870;
+  letter-spacing: 0.04em;
+}
+.admin-empty {
+  font-family: var(--font-utility);
+  font-size: 0.85rem;
+  color: rgba(255, 248, 224, 0.5);
+  text-transform: uppercase;
+  text-align: center;
+  padding: var(--sp-3) 0;
+}
+
+/* RSVP cards in admin */
+.admin-rsvp {
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid rgba(255, 220, 120, 0.1);
+}
+.admin-rsvp:last-child { border-bottom: 0; }
+.admin-rsvp.is-promoted { opacity: 0.45; }
+.admin-rsvp__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.admin-rsvp__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #fff8e0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.admin-rsvp__chip {
+  font-family: var(--font-utility);
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 220, 120, 0.35);
+  color: #ffd870;
+  letter-spacing: 0.04em;
+}
+.admin-rsvp__chip--yes  { color: #86e870; border-color: rgba(134,232,112,0.45); }
+.admin-rsvp__chip--no   { color: #ff7070; border-color: rgba(255,112,112,0.45); }
+.admin-rsvp__chip--done { color: #86e870; border-color: rgba(134,232,112,0.45); }
+.admin-rsvp__when {
+  font-family: var(--font-utility);
+  font-size: 0.7rem;
+  color: rgba(255, 248, 224, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: auto;
+}
+.admin-rsvp__meta {
+  font-family: var(--font-utility);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #ffe4a0;
+  margin: 6px 0 8px;
+}
+.admin-rsvp__meta b { color: #fff8e0; font-weight: 700; }
+
+/* Promotion line — slug + district + role + button per person */
+.admin-promote {
+  display: grid;
+  grid-template-columns: 1fr 90px 110px auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  font-family: var(--font-utility);
+}
+.admin-promote__person {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff8e0;
+  text-transform: uppercase;
+}
+.admin-promote__person small {
+  display: block;
+  font-size: 0.65rem;
+  color: rgba(255, 248, 224, 0.55);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Tribute roster row */
+.admin-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 80px 110px 100px 100px 80px auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 220, 120, 0.08);
+  font-family: var(--font-utility);
+}
+.admin-row:last-child { border-bottom: 0; }
+.admin-row__seal {
+  width: 28px;
+  height: 28px;
+}
+.admin-row__seal img { width: 100%; height: 100%; object-fit: contain; }
+.admin-row__head {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #d4b870;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 0;
+  padding: 8px 0 4px;
+}
+
+/* Compact input fields used in admin tables */
+.admin-input,
+.admin-select {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 220, 120, 0.3);
+  color: #fff8e0;
+  padding: 5px 8px;
+  font-family: var(--font-utility);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  width: 100%;
+  outline: none;
+}
+.admin-input:focus,
+.admin-select:focus { border-color: #ffd870; }
+.admin-input[type="number"] { font-variant-numeric: tabular-nums; }
+
+.admin-btn {
+  padding: 6px 12px;
+  background: linear-gradient(180deg, #3a3530 0%, #2a2622 50%, #1a1714 100%);
+  border: 1px solid rgba(255, 220, 120, 0.4);
+  color: #ffd870;
+  font-family: var(--font-utility);
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+.admin-btn:hover {
+  background: linear-gradient(180deg, #45403a 0%, #322d28 50%, #1f1b18 100%);
+  color: #fff8e0;
+}
+.admin-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.admin-btn--danger { color: #ff7070; border-color: rgba(255, 112, 112, 0.45); }
+
+/* Activity feed (votes + purchases) */
+.admin-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-utility);
+}
+.admin-feed__row {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: baseline;
+  padding: 4px 0;
+  font-size: 0.85rem;
+  color: #fff8e0;
+}
+.admin-feed__row code {
+  font-family: var(--font-typewriter);
+  background: rgba(255, 220, 120, 0.1);
+  border: 1px solid rgba(255, 220, 120, 0.2);
+  padding: 0 4px;
+  color: #ffd870;
+  text-transform: lowercase;
+  font-size: 0.8rem;
+}
+.admin-feed__when {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: rgba(255, 248, 224, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.admin-feed__kind {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #d4b870;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 70px;
+}
+
+/* No-signal fallback for wrong secret */
+.admin-denied {
+  text-align: center;
+  padding: var(--sp-9) var(--sp-5);
+}
+.admin-denied__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: #ff7070;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--sp-3);
+  text-shadow:
+    -1px 0 rgba(0, 0, 0, 0.85),
+    1px 0 rgba(0, 0, 0, 0.85),
+    0 -1px rgba(0, 0, 0, 0.85),
+    0 1px rgba(0, 0, 0, 0.85),
+    0 0 24px rgba(255, 80, 80, 0.4);
+}
+.admin-denied__body {
+  font-family: var(--font-utility);
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  color: #fff8e0;
+}
+
+/* ========================================================
    Voting page — pick a tribute, lock in your opening bet
    Card grid sits inside .broadcast-main
    ======================================================== */

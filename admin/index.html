@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Gamemaker Console — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="mobile-block">
+    <div class="mobile-block__inner">
+      <div class="mobile-block__title">Signal Unavailable</div>
+      <p class="mobile-block__body">This terminal is not authorized for handheld access. Please return on a desktop computer.</p>
+      <p class="mobile-block__small">— Panem Capitol Broadcast —</p>
+    </div>
+  </div>
+
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">GAMEMAKER CONSOLE</span>
+      <div class="broadcast-hud" id="hud">
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizens</span>
+          <span class="broadcast-hud__value" id="hud-tributes">—</span>
+        </div>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Pending RSVPs</span>
+          <span class="broadcast-hud__value" id="hud-pending">—</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main admin-main">
+      <div id="admin-content"></div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { ensureAudioReady } from "/scripts/audio.js";
+    import {
+      fetchTributes, fetchRsvps, createTribute, updateTribute, markRsvpPromoted,
+      fetchRecentVotes, fetchRecentPurchases
+    } from "/scripts/supabase.js";
+
+    // -------------------------------------------------------------------
+    // Auth — change this secret if it's ever shared too widely.
+    // URL is /admin/<secret>. Any other value shows NO SIGNAL.
+    // -------------------------------------------------------------------
+    const ADMIN_SECRET = "gamemakers";
+
+    function getSecretFromUrl() {
+      const m = location.pathname.match(/\/admin\/([^\/]+)\/?/);
+      if (m) return m[1].toLowerCase();
+      const qs = new URLSearchParams(location.search).get("secret");
+      return qs ? qs.toLowerCase() : null;
+    }
+
+    function renderDenied() {
+      document.getElementById("admin-content").innerHTML = `
+        <div class="admin-denied">
+          <div class="admin-denied__title">No Signal</div>
+          <p class="admin-denied__body">This terminal is restricted to Gamemakers.</p>
+        </div>
+      `;
+    }
+
+    // -------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------
+    const DISTRICTS = {
+      1:"Luxury",2:"Masonry",3:"Technology",4:"Fishing",5:"Power",
+      6:"Transportation",7:"Lumber",8:"Textiles",9:"Grain",10:"Livestock",
+      11:"Agriculture",12:"Mining",13:"Graphite"
+    };
+
+    function relativeTime(iso) {
+      if (!iso) return "—";
+      const ms = Date.now() - new Date(iso).getTime();
+      const s = Math.floor(ms / 1000);
+      if (s < 60) return `${s}s ago`;
+      if (s < 3600) return `${Math.floor(s/60)}m ago`;
+      if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+      return `${Math.floor(s/86400)}d ago`;
+    }
+
+    function slugify(name) {
+      return (name || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[̀-ͯ]/g,"")
+        .replace(/[^a-z0-9]+/g,"-")
+        .replace(/^-+|-+$/g,"")
+        .substring(0, 40);
+    }
+
+    // Build options string for district select
+    function districtOptions(selected) {
+      return Object.entries(DISTRICTS).map(([n, name]) =>
+        `<option value="${n}" ${String(n) === String(selected) ? "selected" : ""}>D${n} · ${name}</option>`
+      ).join("");
+    }
+
+    // Build options string for role select
+    function roleOptions(selected) {
+      return ["tribute","capitol","slums"].map(r =>
+        `<option value="${r}" ${r === selected ? "selected" : ""}>${r.toUpperCase()}</option>`
+      ).join("");
+    }
+
+    // -------------------------------------------------------------------
+    // Data + render
+    // -------------------------------------------------------------------
+    let state = { tributes: [], rsvps: [], votes: [], purchases: [] };
+
+    async function refresh() {
+      [state.tributes, state.rsvps, state.votes, state.purchases] = await Promise.all([
+        fetchTributes(),
+        fetchRsvps(),
+        fetchRecentVotes(15),
+        fetchRecentPurchases(15)
+      ]);
+
+      const pending = state.rsvps.filter(r => !r.promoted_at).length;
+      document.getElementById("hud-tributes").textContent = state.tributes.length;
+      document.getElementById("hud-pending").textContent = pending;
+
+      renderAll();
+    }
+
+    function renderAll() {
+      const root = document.getElementById("admin-content");
+      root.innerHTML = `
+        <div class="admin-stack">
+          <section class="admin-section">
+            <h2 class="admin-section__title">
+              Incoming Census
+              <span class="admin-section__count">${state.rsvps.length} total</span>
+            </h2>
+            <div id="rsvp-list"></div>
+          </section>
+
+          <section class="admin-section">
+            <h2 class="admin-section__title">
+              Tribute Roster
+              <span class="admin-section__count">${state.tributes.length} citizens</span>
+            </h2>
+            <div id="tribute-list"></div>
+          </section>
+
+          <section class="admin-section">
+            <h2 class="admin-section__title">
+              Recent Activity
+              <span class="admin-section__count">${state.votes.length} votes · ${state.purchases.length} purchases</span>
+            </h2>
+            <div id="activity"></div>
+          </section>
+        </div>
+      `;
+      renderRsvps();
+      renderTributes();
+      renderActivity();
+    }
+
+    function renderRsvps() {
+      const wrap = document.getElementById("rsvp-list");
+      if (!state.rsvps.length) {
+        wrap.innerHTML = `<div class="admin-empty">No census submissions yet</div>`;
+        return;
+      }
+      const promotedSlugs = new Set(state.tributes.map(t => t.slug));
+      wrap.innerHTML = state.rsvps.map(r => {
+        const isDone = !!r.promoted_at;
+        const yesNo = r.attending === "yes"
+          ? `<span class="admin-rsvp__chip admin-rsvp__chip--yes">Attending</span>`
+          : `<span class="admin-rsvp__chip admin-rsvp__chip--no">Declined</span>`;
+        const doneChip = isDone
+          ? `<span class="admin-rsvp__chip admin-rsvp__chip--done">Promoted</span>` : "";
+
+        const allPeople = [
+          { name: r.name, primary: true },
+          ...((r.companion_names || []).map(n => ({ name: n, primary: false })))
+        ];
+        const promoteLines = allPeople.map((p, idx) => {
+          const suggestedSlug = slugify(p.name) || `guest-${r.id.slice(0,4)}-${idx}`;
+          const alreadyExists = promotedSlugs.has(suggestedSlug);
+          return `
+            <div class="admin-promote" data-rsvp-id="${r.id}" data-person-name="${p.name}">
+              <div class="admin-promote__person">${p.name}${p.primary ? "" : "<small>companion</small>"}</div>
+              <input class="admin-input" data-field="slug" value="${suggestedSlug}" placeholder="slug">
+              <select class="admin-select" data-field="district">${districtOptions(1)}</select>
+              <select class="admin-select" data-field="role">${roleOptions("tribute")}</select>
+              <button class="admin-btn" data-action="promote" ${alreadyExists ? "disabled" : ""}>
+                ${alreadyExists ? "Slug taken" : "Promote"}
+              </button>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="admin-rsvp ${isDone ? "is-promoted" : ""}">
+            <div class="admin-rsvp__head">
+              <span class="admin-rsvp__name">${r.name}</span>
+              ${yesNo}
+              ${doneChip}
+              <span class="admin-rsvp__when">${relativeTime(r.created_at)}</span>
+            </div>
+            <div class="admin-rsvp__meta">
+              ${r.companion_count > 0 ? `<b>+${r.companion_count}</b> traveling — ${(r.companion_names || []).join(", ")}` : "Traveling alone"}
+              ${r.contact ? ` · contact: ${r.contact}` : ""}
+              ${r.profile_photo ? " · 📸 portrait" : ""}
+            </div>
+            ${r.attending === "yes" ? promoteLines : ""}
+          </div>
+        `;
+      }).join("");
+
+      // Wire promote buttons
+      wrap.querySelectorAll(".admin-promote").forEach(row => {
+        row.querySelector('[data-action="promote"]').addEventListener("click", async (e) => {
+          const btn = e.currentTarget;
+          const rsvpId = row.dataset.rsvpId;
+          const name   = row.dataset.personName;
+          const slug   = row.querySelector('[data-field="slug"]').value.trim().toLowerCase();
+          const district = parseInt(row.querySelector('[data-field="district"]').value, 10);
+          const role   = row.querySelector('[data-field="role"]').value;
+          if (!slug) { btn.textContent = "Slug required"; return; }
+          btn.disabled = true;
+          btn.textContent = "Promoting…";
+          try {
+            await createTribute({ slug, name, district, role, points: 0, credits: 0 });
+            // If this was the last unpromoted person on the RSVP, mark RSVP promoted
+            const rsvp = state.rsvps.find(r => r.id === rsvpId);
+            const allOnRsvp = [rsvp.name, ...(rsvp.companion_names || [])];
+            const newRoster = (await fetchTributes()).map(t => t.name);
+            const allInRoster = allOnRsvp.every(n => newRoster.includes(n));
+            if (allInRoster) await markRsvpPromoted(rsvpId);
+            await refresh();
+          } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            btn.textContent = (err.message || "").includes("duplicate") ? "Slug exists" : "Failed";
+          }
+        });
+      });
+    }
+
+    function renderTributes() {
+      const wrap = document.getElementById("tribute-list");
+      if (!state.tributes.length) {
+        wrap.innerHTML = `<div class="admin-empty">No tributes yet — promote some from the census above</div>`;
+        return;
+      }
+      const header = `
+        <div class="admin-row admin-row__head">
+          <div></div>
+          <div>Name / Slug</div>
+          <div>District</div>
+          <div>Role</div>
+          <div>Points</div>
+          <div>Credits</div>
+          <div>Train</div>
+          <div></div>
+        </div>
+      `;
+      const sorted = [...state.tributes].sort((a, b) => (b.points || 0) - (a.points || 0));
+      const rows = sorted.map(t => `
+        <div class="admin-row" data-slug="${t.slug}">
+          <div class="admin-row__seal"><img src="/assets/seals/district-${t.district}.png" alt=""></div>
+          <div>
+            <div style="font-weight:800;color:#fff8e0;text-transform:uppercase;font-size:0.95rem;">${t.name}</div>
+            <div style="font-size:0.7rem;color:rgba(255,248,224,0.55);text-transform:uppercase;letter-spacing:0.04em;">/${t.slug}</div>
+          </div>
+          <select class="admin-select" data-field="district">${districtOptions(t.district)}</select>
+          <select class="admin-select" data-field="role">${roleOptions(t.role)}</select>
+          <input class="admin-input" type="number" data-field="points" value="${t.points ?? 0}">
+          <input class="admin-input" type="number" data-field="credits" value="${t.credits ?? 0}">
+          <input class="admin-input" type="number" data-field="training_score" value="${t.trainingScore ?? ""}" min="1" max="12" placeholder="—">
+          <button class="admin-btn" data-action="save">Save</button>
+        </div>
+      `).join("");
+
+      wrap.innerHTML = header + rows;
+
+      wrap.querySelectorAll(".admin-row").forEach(row => {
+        const saveBtn = row.querySelector('[data-action="save"]');
+        if (!saveBtn) return;
+        saveBtn.addEventListener("click", async () => {
+          const slug = row.dataset.slug;
+          const patch = {
+            district: parseInt(row.querySelector('[data-field="district"]').value, 10),
+            role: row.querySelector('[data-field="role"]').value,
+            points: parseInt(row.querySelector('[data-field="points"]').value, 10) || 0,
+            credits: parseInt(row.querySelector('[data-field="credits"]').value, 10) || 0,
+            updated_at: new Date().toISOString()
+          };
+          const ts = row.querySelector('[data-field="training_score"]').value;
+          patch.training_score = ts === "" ? null : parseInt(ts, 10);
+
+          saveBtn.disabled = true;
+          saveBtn.textContent = "Saving…";
+          try {
+            await updateTribute(slug, patch);
+            saveBtn.textContent = "Saved ✓";
+            await refresh();
+          } catch (err) {
+            console.error(err);
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Failed";
+          }
+        });
+      });
+    }
+
+    function renderActivity() {
+      const wrap = document.getElementById("activity");
+      const tributesBySlug = Object.fromEntries(state.tributes.map(t => [t.slug, t]));
+      const lookup = (s) => tributesBySlug[s]?.name?.toUpperCase() || s;
+
+      const rows = [];
+      state.votes.forEach(v => rows.push({
+        when: v.created_at,
+        kind: "Vote",
+        body: `<code>${v.voter_slug}</code> bet on <code>${v.target_slug}</code> · ${lookup(v.voter_slug)} → ${lookup(v.target_slug)}`
+      }));
+      state.purchases.forEach(p => rows.push({
+        when: p.created_at,
+        kind: "Buy",
+        body: `<code>${p.buyer_slug}</code> bought <b>${p.item_id}</b> for <code>${p.target_slug}</code> · ${p.cost} cr · ${lookup(p.buyer_slug)} → ${lookup(p.target_slug)}`
+      }));
+      rows.sort((a, b) => new Date(b.when) - new Date(a.when));
+
+      if (!rows.length) {
+        wrap.innerHTML = `<div class="admin-empty">No bets or purchases yet</div>`;
+        return;
+      }
+      wrap.innerHTML = `<div class="admin-feed">
+        ${rows.slice(0, 30).map(r => `
+          <div class="admin-feed__row">
+            <span class="admin-feed__kind">${r.kind}</span>
+            <span>${r.body}</span>
+            <span class="admin-feed__when">${relativeTime(r.when)}</span>
+          </div>
+        `).join("")}
+      </div>`;
+    }
+
+    // -------------------------------------------------------------------
+    // Boot
+    // -------------------------------------------------------------------
+    ensureAudioReady();
+    const provided = getSecretFromUrl();
+    if (provided !== ADMIN_SECRET) {
+      renderDenied();
+      document.getElementById("hud").style.display = "none";
+    } else {
+      refresh().catch(err => {
+        console.error(err);
+        document.getElementById("admin-content").innerHTML =
+          `<div class="admin-empty">Transmission error — ${err.message || err}</div>`;
+      });
+    }
+  </script>
+</body>
+</html>
