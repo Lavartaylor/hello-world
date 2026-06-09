@@ -230,6 +230,66 @@ export async function fetchCaptionsForRound(round_id) {
   return data || [];
 }
 
+export async function createCaptionRound({ photo_url, prompt, closes_at }) {
+  const { data, error } = await supabase
+    .from("hg_caption_rounds")
+    .insert({ photo_url, prompt: prompt || null, closes_at: closes_at || null, opens_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCaptionRound(id) {
+  const { error } = await supabase.from("hg_caption_rounds").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// --- Weapon mini-game (W1) helpers --------------------------------
+
+export async function chooseWeapon(slug, weapon) {
+  const { data, error } = await supabase
+    .from("hg_weapon_choices")
+    .upsert({ slug, weapon }, { onConflict: "slug" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchWeaponChoice(slug) {
+  const { data, error } = await supabase
+    .from("hg_weapon_choices")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function submitWeaponScore({ slug, weapon, score, week }) {
+  const { data, error } = await supabase
+    .from("hg_weapon_scores")
+    .insert({ slug, weapon, score, week })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchBestWeaponScore(slug, week) {
+  const { data, error } = await supabase
+    .from("hg_weapon_scores")
+    .select("*")
+    .eq("slug", slug)
+    .eq("week", week)
+    .order("score", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 // --- Current week (used by /challenge dispatcher) -----------------
 
 // Hard-coded for now; can be moved into a config table later.

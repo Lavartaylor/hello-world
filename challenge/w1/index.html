@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>The Cornucopia — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    .weapon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: var(--sp-3);
+      width: min(560px, 100%);
+      margin: var(--sp-4) auto 0;
+    }
+    .weapon-card {
+      background: rgba(0, 14, 30, 0.55);
+      border: 1.5px solid rgba(255, 220, 120, 0.25);
+      padding: var(--sp-4) var(--sp-3);
+      text-align: center;
+      cursor: pointer;
+      font-family: var(--font-utility);
+      color: #fff8e0;
+      transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+      text-shadow:
+        -1px 0 rgba(0, 0, 0, 0.85),
+        1px 0 rgba(0, 0, 0, 0.85),
+        0 -1px rgba(0, 0, 0, 0.85),
+        0 1px rgba(0, 0, 0, 0.85);
+    }
+    .weapon-card:hover {
+      border-color: rgba(255, 216, 112, 0.6);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    }
+    .weapon-card.is-locked {
+      border-color: #ffd870;
+      background: rgba(40, 30, 0, 0.55);
+      box-shadow: 0 0 24px rgba(255, 216, 112, 0.3);
+    }
+    .weapon-card__icon {
+      font-size: 2.5rem;
+      line-height: 1;
+      margin-bottom: var(--sp-3);
+      display: block;
+    }
+    .weapon-card__name {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.05rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      margin-bottom: 2px;
+    }
+    .weapon-card__game {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #d4b870;
+      letter-spacing: 0.04em;
+    }
+    .weapon-card__status {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: var(--sp-2);
+      color: #86e870;
+    }
+    .weapon-card.is-stub { opacity: 0.6; cursor: not-allowed; }
+    .weapon-card.is-stub .weapon-card__status { color: #ff8b6e; }
+
+    /* Tower game canvas */
+    .tower-stage {
+      width: min(420px, 96vw);
+      margin: var(--sp-4) auto 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-3);
+    }
+    .tower-canvas {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      background:
+        linear-gradient(180deg, rgba(0,30,60,0.4) 0%, rgba(0,10,30,0.7) 100%);
+      border: 1.5px solid rgba(255, 220, 120, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 60px rgba(0,0,0,0.4);
+      display: block;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .tower-hud {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      font-family: var(--font-utility);
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #fff8e0;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.85);
+    }
+    .tower-hud__value {
+      font-family: var(--font-display);
+      font-weight: 800;
+      color: #ffd870;
+      font-size: 1.4rem;
+    }
+    .tower-button {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #fff8e0;
+      background: linear-gradient(180deg, #3a3530 0%, #2a2622 50%, #1a1714 100%);
+      border: 1px solid rgba(255, 220, 120, 0.4);
+      padding: 12px 32px;
+      cursor: pointer;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 240, 200, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 3px 0 #0a0908;
+      width: 100%;
+      max-width: 280px;
+    }
+    .tower-button:active {
+      transform: translateY(2px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 240, 200, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 1px 0 #0a0908;
+    }
+    .tower-msg {
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      color: #ffe4a0;
+      letter-spacing: 0.02em;
+      text-align: center;
+      min-height: 1.4em;
+    }
+  </style>
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">CH-W1 · THE CORNUCOPIA</span>
+      <div class="broadcast-hud" id="hud" hidden>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+        <div class="broadcast-hud__row broadcast-hud__row--points">
+          <span class="broadcast-hud__label">Best Score</span>
+          <span class="broadcast-hud__value" id="hud-best">—</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <div id="content"><p class="admin-empty">Loading transmission…</p></div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { ensureAudioReady, dingBell } from "/scripts/audio.js";
+    import {
+      fetchTribute, fetchWeaponChoice, chooseWeapon,
+      submitWeaponScore, fetchBestWeaponScore
+    } from "/scripts/supabase.js";
+    import { getSlug } from "/scripts/data.js";
+
+    const WEAPONS = [
+      { id: "bow",       name: "Bow",       game: "Archery",         icon: "🏹", playable: false },
+      { id: "slingshot", name: "Slingshot", game: "Trajectory",      icon: "🎯", playable: false },
+      { id: "knife",     name: "Knife",     game: "Spinning Target", icon: "🔪", playable: false },
+      { id: "net",       name: "Net",       game: "Catch",           icon: "🕸️", playable: false },
+      { id: "tower",     name: "Tower",     game: "Falling Blocks",  icon: "🧱", playable: true  }
+    ];
+    const WEEK = 1;
+    let tribute = null;
+
+    function renderEmpty(msg) {
+      document.getElementById("content").innerHTML = `
+        <div style="text-align:center;padding-top:var(--sp-6);">
+          <h1 class="screen-form__title">The Cornucopia</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:1rem;color:#ffe4a0;margin-top:var(--sp-4);text-shadow:0 1px 0 rgba(0,0,0,0.85);">${msg}</p>
+        </div>
+      `;
+    }
+
+    async function run() {
+      const slug = getSlug();
+      tribute = slug ? await fetchTribute(slug) : null;
+      if (!tribute) {
+        renderEmpty("No citizen detected. Use the personal link the Gamemakers sent you.");
+        return;
+      }
+
+      document.getElementById("hud").hidden = false;
+      document.getElementById("hud-name").textContent = tribute.name.toUpperCase();
+
+      const choice = await fetchWeaponChoice(tribute.slug);
+      if (!choice) {
+        renderPicker();
+      } else {
+        const best = await fetchBestWeaponScore(tribute.slug, WEEK);
+        document.getElementById("hud-best").textContent = best ? best.score : "—";
+        renderGame(choice.weapon, best?.score ?? 0);
+      }
+    }
+
+    function renderPicker() {
+      const root = document.getElementById("content");
+      root.innerHTML = `
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-utility);font-weight:700;font-size:0.85rem;color:#d4b870;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--sp-2);">Week 1 · The Cornucopia</div>
+          <h1 class="screen-form__title" style="font-size:clamp(1.8rem, 7vw, 3rem);">Pick Your Weapon</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:0.95rem;color:#ffe4a0;margin:var(--sp-3) auto var(--sp-2);max-width:38ch;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+            Your weapon is locked for the entire event. You'll use it in Week 1's mini-game and in the Final Bracket on Week 5. Choose wisely.
+          </p>
+          <div class="weapon-grid" id="weapon-grid">
+            ${WEAPONS.map(w => `
+              <button class="weapon-card ${w.playable ? "" : "is-stub"}" data-weapon="${w.id}" ${w.playable ? "" : "disabled"}>
+                <span class="weapon-card__icon">${w.icon}</span>
+                <div class="weapon-card__name">${w.name}</div>
+                <div class="weapon-card__game">${w.game}</div>
+                <div class="weapon-card__status">${w.playable ? "Playable" : "Coming soon"}</div>
+              </button>
+            `).join("")}
+          </div>
+          <p style="font-family:var(--font-utility);font-weight:500;font-size:0.75rem;color:#ad8a40;text-transform:uppercase;letter-spacing:0.04em;margin-top:var(--sp-5);">
+            Only Tower is live right now. Other weapons unlock as Gamemakers build them.
+          </p>
+        </div>
+      `;
+
+      root.querySelectorAll(".weapon-card[data-weapon]:not(.is-stub)").forEach(card => {
+        card.addEventListener("click", async () => {
+          const weaponId = card.dataset.weapon;
+          if (!confirm(`Lock in ${WEAPONS.find(w => w.id === weaponId).name}? This cannot be changed.`)) return;
+          card.classList.add("is-locked");
+          try {
+            await chooseWeapon(tribute.slug, weaponId);
+            renderGame(weaponId, 0);
+          } catch (err) {
+            console.error(err);
+            alert("Failed to lock in. Try again.");
+            card.classList.remove("is-locked");
+          }
+        });
+      });
+    }
+
+    function renderGame(weapon, currentBest) {
+      const root = document.getElementById("content");
+      if (weapon !== "tower") {
+        root.innerHTML = `
+          <div style="text-align:center;padding-top:var(--sp-6);">
+            <h1 class="screen-form__title">${WEAPONS.find(w => w.id === weapon)?.name ?? weapon}</h1>
+            <p style="font-family:var(--font-utility);font-weight:600;font-size:1rem;color:#ffe4a0;margin-top:var(--sp-4);max-width:36ch;margin-left:auto;margin-right:auto;line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+              Your weapon is locked, but this mini-game isn't built yet. The Gamemakers will deploy it before Week 1 opens.
+            </p>
+          </div>
+        `;
+        return;
+      }
+      mountTower(currentBest);
+    }
+
+    // ====================================================================
+    // TOWER — Stack-style falling blocks. Tap to drop a sliding block onto
+    // the tower. Misalignment = game over. Score = blocks stacked.
+    // ====================================================================
+    function mountTower(currentBest) {
+      const root = document.getElementById("content");
+      root.innerHTML = `
+        <div class="tower-stage">
+          <div style="text-align:center;">
+            <h1 class="screen-form__title" style="font-size:clamp(1.5rem,5vw,2.2rem);">The Tower</h1>
+            <p style="font-family:var(--font-utility);font-weight:600;font-size:0.85rem;color:#ffe4a0;margin-top:4px;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+              Tap to drop. Land within the block below.
+            </p>
+          </div>
+          <div class="tower-hud">
+            <div>Stack: <span class="tower-hud__value" id="tower-score">0</span></div>
+            <div>Best: <span class="tower-hud__value" id="tower-best">${currentBest}</span></div>
+          </div>
+          <canvas class="tower-canvas" id="tower-canvas"></canvas>
+          <div class="tower-msg" id="tower-msg">Tap the canvas to drop</div>
+          <button class="tower-button" id="tower-action">Start</button>
+        </div>
+      `;
+
+      const canvas = document.getElementById("tower-canvas");
+      const ctx = canvas.getContext("2d");
+      const scoreEl = document.getElementById("tower-score");
+      const bestEl = document.getElementById("tower-best");
+      const msgEl = document.getElementById("tower-msg");
+      const actionBtn = document.getElementById("tower-action");
+
+      let W = 0, H = 0;
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        W = rect.width;
+        H = rect.height;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      const BLOCK_H = 24;
+      const FLOOR_PAD = 60;
+      let stack = []; // {x, w}
+      let mover = null; // {x, w, vx}
+      let score = 0;
+      let best = currentBest;
+      let running = false;
+      let raf = null;
+
+      function startGame() {
+        score = 0;
+        scoreEl.textContent = "0";
+        msgEl.textContent = "Tap the canvas to drop";
+        const baseW = W * 0.6;
+        stack = [{ x: (W - baseW) / 2, w: baseW }];
+        spawnMover();
+        running = true;
+        actionBtn.textContent = "Drop";
+        loop();
+      }
+
+      function spawnMover() {
+        const top = stack[stack.length - 1];
+        const speed = 2.8 + Math.min(stack.length * 0.18, 5);
+        mover = { x: 0, w: top.w, vx: speed, dropping: false, dropY: null };
+      }
+
+      function towerTop() {
+        return H - FLOOR_PAD - stack.length * BLOCK_H;
+      }
+
+      function drawStack() {
+        ctx.clearRect(0, 0, W, H);
+        // ground line
+        ctx.strokeStyle = "rgba(255, 216, 112, 0.3)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, H - FLOOR_PAD + 12);
+        ctx.lineTo(W, H - FLOOR_PAD + 12);
+        ctx.stroke();
+
+        // stacked blocks
+        for (let i = 0; i < stack.length; i++) {
+          const b = stack[i];
+          const y = H - FLOOR_PAD - (i + 1) * BLOCK_H;
+          const hue = 40 + (stack.length - i) * 3;
+          ctx.fillStyle = `hsl(${hue}, 70%, 55%)`;
+          ctx.fillRect(b.x, y, b.w, BLOCK_H);
+          ctx.strokeStyle = "rgba(0,0,0,0.55)";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(b.x + 0.5, y + 0.5, b.w - 1, BLOCK_H - 1);
+        }
+
+        if (mover) {
+          const y = mover.dropping ? mover.dropY : towerTop();
+          ctx.fillStyle = "#ffd870";
+          ctx.fillRect(mover.x, y, mover.w, BLOCK_H);
+          ctx.strokeStyle = "rgba(0,0,0,0.7)";
+          ctx.strokeRect(mover.x + 0.5, y + 0.5, mover.w - 1, BLOCK_H - 1);
+        }
+      }
+
+      function loop() {
+        if (!running) return;
+        if (mover) {
+          if (!mover.dropping) {
+            mover.x += mover.vx;
+            if (mover.x + mover.w > W) {
+              mover.x = W - mover.w;
+              mover.vx *= -1;
+            } else if (mover.x < 0) {
+              mover.x = 0;
+              mover.vx *= -1;
+            }
+          } else {
+            const targetY = towerTop();
+            mover.dropY = Math.min(targetY, mover.dropY + 18);
+            if (mover.dropY >= targetY) {
+              landBlock();
+            }
+          }
+        }
+        drawStack();
+        raf = requestAnimationFrame(loop);
+      }
+
+      function dropBlock() {
+        if (!running || !mover || mover.dropping) return;
+        mover.dropping = true;
+        mover.dropY = -BLOCK_H;
+      }
+
+      function landBlock() {
+        const top = stack[stack.length - 1];
+        const left = Math.max(mover.x, top.x);
+        const right = Math.min(mover.x + mover.w, top.x + top.w);
+        const overlap = right - left;
+
+        if (overlap < 6) {
+          gameOver();
+          return;
+        }
+
+        // Trim mover to overlap (Stack-game classic)
+        stack.push({ x: left, w: overlap });
+        score = stack.length - 1;
+        scoreEl.textContent = score;
+        if (score > best) {
+          best = score;
+          bestEl.textContent = best;
+        }
+        dingBell({ volume: 0.06 });
+        spawnMover();
+      }
+
+      function gameOver() {
+        running = false;
+        cancelAnimationFrame(raf);
+        msgEl.textContent = `Stack of ${score}. Tap Start to try again.`;
+        actionBtn.textContent = "Start";
+        submitWeaponScore({ slug: tribute.slug, weapon: "tower", score, week: WEEK })
+          .then(() => { /* recorded */ })
+          .catch(err => console.error("Score submit failed:", err));
+      }
+
+      actionBtn.addEventListener("click", () => {
+        if (!running) startGame();
+        else dropBlock();
+      });
+      canvas.addEventListener("click", () => {
+        if (running) dropBlock();
+      });
+      canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        if (running) dropBlock();
+      }, { passive: false });
+
+      window.addEventListener("resize", () => {
+        resize();
+        drawStack();
+      });
+      resize();
+      drawStack();
+    }
+
+    ensureAudioReady();
+    run().catch(err => {
+      console.error(err);
+      renderEmpty("Transmission error — check console.");
+    });
+  </script>
+</body>
+</html>

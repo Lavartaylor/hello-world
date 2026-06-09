@@ -55,7 +55,8 @@
     import { ensureAudioReady } from "/scripts/audio.js";
     import {
       fetchTributes, fetchRsvps, createTribute, updateTribute, markRsvpPromoted,
-      fetchRecentVotes, fetchRecentPurchases
+      fetchRecentVotes, fetchRecentPurchases,
+      fetchAllCaptionRounds, createCaptionRound, deleteCaptionRound
     } from "/scripts/supabase.js";
 
     // -------------------------------------------------------------------
@@ -125,14 +126,15 @@
     // -------------------------------------------------------------------
     // Data + render
     // -------------------------------------------------------------------
-    let state = { tributes: [], rsvps: [], votes: [], purchases: [] };
+    let state = { tributes: [], rsvps: [], votes: [], purchases: [], captionRounds: [] };
 
     async function refresh() {
-      [state.tributes, state.rsvps, state.votes, state.purchases] = await Promise.all([
+      [state.tributes, state.rsvps, state.votes, state.purchases, state.captionRounds] = await Promise.all([
         fetchTributes(),
         fetchRsvps(),
         fetchRecentVotes(15),
-        fetchRecentPurchases(15)
+        fetchRecentPurchases(15),
+        fetchAllCaptionRounds()
       ]);
 
       const pending = state.rsvps.filter(r => !r.promoted_at).length;
@@ -164,6 +166,14 @@
 
           <section class="admin-section">
             <h2 class="admin-section__title">
+              Caption Rounds (W3)
+              <span class="admin-section__count">${state.captionRounds.length} rounds</span>
+            </h2>
+            <div id="caption-mgr"></div>
+          </section>
+
+          <section class="admin-section">
+            <h2 class="admin-section__title">
               Recent Activity
               <span class="admin-section__count">${state.votes.length} votes · ${state.purchases.length} purchases</span>
             </h2>
@@ -173,7 +183,124 @@
       `;
       renderRsvps();
       renderTributes();
+      renderCaptionRounds();
       renderActivity();
+    }
+
+    // ---- Caption Round Manager ---------------------------------
+    function renderCaptionRounds() {
+      const wrap = document.getElementById("caption-mgr");
+      const rounds = state.captionRounds;
+      const list = rounds.length ? rounds.map(r => `
+        <div class="admin-rsvp" data-round-id="${r.id}">
+          <div class="admin-rsvp__head">
+            <span class="admin-rsvp__name">${(r.prompt || "Caption this").slice(0, 60)}</span>
+            <span class="admin-rsvp__when">${relativeTime(r.created_at)}</span>
+          </div>
+          <div class="admin-rsvp__meta">
+            <img src="${r.photo_url}" alt="" style="display:block;width:120px;height:90px;object-fit:cover;border-radius:4px;border:1px solid rgba(255,220,120,0.3);margin-top:6px;">
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+            <button class="admin-btn admin-btn--danger" data-action="delete-round">Delete</button>
+          </div>
+        </div>
+      `).join("") : `<div class="admin-empty">No caption rounds yet — drop the first photo</div>`;
+
+      wrap.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4);">
+          <div style="padding:var(--sp-3);background:rgba(0,30,60,0.4);border:1px solid rgba(255,220,120,0.25);">
+            <div style="display:grid;grid-template-columns:1fr;gap:var(--sp-3);">
+              <label class="rsvp-field">
+                <span class="rsvp-label">Photo file</span>
+                <input class="admin-input" type="file" accept="image/*" id="caption-file">
+              </label>
+              <label class="rsvp-field">
+                <span class="rsvp-label">Prompt (optional)</span>
+                <input class="admin-input" type="text" id="caption-prompt" placeholder="Caption this disaster" maxlength="200">
+              </label>
+              <div style="display:flex;align-items:center;gap:var(--sp-3);">
+                <img id="caption-preview" hidden style="width:120px;height:90px;object-fit:cover;border-radius:4px;border:1px solid rgba(255,220,120,0.4);">
+                <button class="admin-btn" id="caption-submit" disabled>Drop New Round</button>
+                <span id="caption-status" style="font-family:var(--font-utility);font-size:0.75rem;text-transform:uppercase;color:#ad8a40;letter-spacing:0.04em;"></span>
+              </div>
+            </div>
+          </div>
+
+          <div>${list}</div>
+        </div>
+      `;
+
+      const fileInput = document.getElementById("caption-file");
+      const preview = document.getElementById("caption-preview");
+      const promptInput = document.getElementById("caption-prompt");
+      const submitBtn = document.getElementById("caption-submit");
+      const statusEl = document.getElementById("caption-status");
+      let photoDataUrl = null;
+
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        statusEl.textContent = "Compressing…";
+        photoDataUrl = await compressImage(file, 1024, 0.78);
+        preview.src = photoDataUrl;
+        preview.hidden = false;
+        submitBtn.disabled = false;
+        statusEl.textContent = `${Math.round(photoDataUrl.length / 1024)} KB`;
+      });
+
+      submitBtn.addEventListener("click", async () => {
+        if (!photoDataUrl) return;
+        submitBtn.disabled = true;
+        statusEl.textContent = "Uploading…";
+        try {
+          await createCaptionRound({ photo_url: photoDataUrl, prompt: promptInput.value.trim() || null });
+          statusEl.textContent = "Round live ✓";
+          await refresh();
+        } catch (err) {
+          console.error(err);
+          submitBtn.disabled = false;
+          statusEl.textContent = "Failed — check console";
+        }
+      });
+
+      wrap.querySelectorAll("[data-action='delete-round']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const row = btn.closest(".admin-rsvp");
+          const id = row.dataset.roundId;
+          if (!confirm("Delete this caption round and all its submissions/votes?")) return;
+          btn.disabled = true;
+          btn.textContent = "Deleting…";
+          try {
+            await deleteCaptionRound(id);
+            await refresh();
+          } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            btn.textContent = "Failed";
+          }
+        });
+      });
+    }
+
+    // Client-side compression so we don't slam Supabase TEXT columns with huge data URLs
+    function compressImage(file, maxSide, quality) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = e => { img.src = e.target.result; };
+        reader.onerror = reject;
+        img.onload = () => {
+          const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const w = Math.round(img.width * ratio);
+          const h = Math.round(img.height * ratio);
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
     function renderRsvps() {
