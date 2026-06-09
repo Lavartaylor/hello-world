@@ -1,5 +1,5 @@
 // Supabase client for the 75th Hunger Games event site.
-// Project: bdenaszyupuelismxyer (LaVar's personal Supabase, separate from CCG)
+// Project: bdenaszyupuelismxyer (Personal Supabase, separate from CCG)
 // All tables live under the public.hg_* prefix.
 //
 // The anon key is intentionally public — this is a static site with
