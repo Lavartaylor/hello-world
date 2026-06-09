@@ -374,6 +374,103 @@ export async function fetchThreatBallot(voter_slug, week = 5) {
   return data;
 }
 
+// --- Halloween Loadout Shop ---------------------------------------
+
+export async function fetchLoadoutItems() {
+  const { data, error } = await supabase
+    .from("hg_loadout_items")
+    .select("*")
+    .order("cost", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchLoadoutForTribute(tribute_slug) {
+  const { data, error } = await supabase
+    .from("hg_loadout_purchases")
+    .select("*")
+    .eq("tribute_slug", tribute_slug)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchAllLoadouts() {
+  const { data, error } = await supabase
+    .from("hg_loadout_purchases")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// Atomic-ish purchase: writes the purchase log + decrements credits.
+// Race-safe enough for a 4-finalist window (no concurrent buyers on the same slug).
+export async function buyLoadoutItem({ tribute_slug, item_id }) {
+  // 1. Look up item + tribute fresh
+  const [{ data: item, error: itemErr }, { data: tribute, error: trErr }] = await Promise.all([
+    supabase.from("hg_loadout_items").select("*").eq("id", item_id).maybeSingle(),
+    supabase.from("hg_tributes").select("slug,credits").eq("slug", tribute_slug).maybeSingle()
+  ]);
+  if (itemErr) throw itemErr;
+  if (trErr)   throw trErr;
+  if (!item)    throw new Error("Item not found");
+  if (!tribute) throw new Error("Tribute not found");
+
+  // 2. Affordability check
+  const balance = tribute.credits ?? 0;
+  if (balance < item.cost) throw new Error(`Insufficient credits (need ${item.cost}, have ${balance})`);
+
+  // 3. Per-tribute cap check
+  if (item.max_per_tribute != null) {
+    const { count, error: countErr } = await supabase
+      .from("hg_loadout_purchases")
+      .select("id", { count: "exact", head: true })
+      .eq("tribute_slug", tribute_slug)
+      .eq("item_id", item_id);
+    if (countErr) throw countErr;
+    if ((count ?? 0) >= item.max_per_tribute) {
+      throw new Error(`Max ${item.max_per_tribute} of ${item.name} reached`);
+    }
+  }
+
+  // 4. Insert the purchase record
+  const { data: purchase, error: insErr } = await supabase
+    .from("hg_loadout_purchases")
+    .insert({ tribute_slug, item_id, cost_at_purchase: item.cost })
+    .select()
+    .single();
+  if (insErr) throw insErr;
+
+  // 5. Decrement credits
+  const newBalance = balance - item.cost;
+  const { error: updErr } = await supabase
+    .from("hg_tributes")
+    .update({ credits: newBalance })
+    .eq("slug", tribute_slug);
+  if (updErr) throw updErr;
+
+  return { purchase, newBalance };
+}
+
+// Event state flags (loadout_open / loadout_locked / credit_frozen, etc.)
+export async function fetchEventStateFlag(key) {
+  const { data, error } = await supabase
+    .from("hg_event_state")
+    .select("*")
+    .eq("key", key)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function setEventStateFlag(key, value) {
+  const { error } = await supabase
+    .from("hg_event_state")
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+  if (error) throw error;
+}
+
 // --- Current week (used by /challenge dispatcher) -----------------
 
 // Hard-coded for now; can be moved into a config table later.

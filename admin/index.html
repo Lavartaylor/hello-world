@@ -56,7 +56,8 @@
     import {
       fetchTributes, fetchRsvps, createTribute, updateTribute, markRsvpPromoted,
       fetchRecentVotes, fetchRecentPurchases,
-      fetchAllCaptionRounds, createCaptionRound, deleteCaptionRound
+      fetchAllCaptionRounds, createCaptionRound, deleteCaptionRound,
+      fetchLoadoutItems, fetchAllLoadouts, fetchEventStateFlag, setEventStateFlag
     } from "/scripts/supabase.js";
 
     // -------------------------------------------------------------------
@@ -126,15 +127,18 @@
     // -------------------------------------------------------------------
     // Data + render
     // -------------------------------------------------------------------
-    let state = { tributes: [], rsvps: [], votes: [], purchases: [], captionRounds: [] };
+    let state = { tributes: [], rsvps: [], votes: [], purchases: [], captionRounds: [], loadoutItems: [], loadouts: [], loadoutLockFlag: null };
 
     async function refresh() {
-      [state.tributes, state.rsvps, state.votes, state.purchases, state.captionRounds] = await Promise.all([
+      [state.tributes, state.rsvps, state.votes, state.purchases, state.captionRounds, state.loadoutItems, state.loadouts, state.loadoutLockFlag] = await Promise.all([
         fetchTributes(),
         fetchRsvps(),
         fetchRecentVotes(15),
         fetchRecentPurchases(15),
-        fetchAllCaptionRounds()
+        fetchAllCaptionRounds(),
+        fetchLoadoutItems(),
+        fetchAllLoadouts(),
+        fetchEventStateFlag("loadout_locked")
       ]);
 
       const pending = state.rsvps.filter(r => !r.promoted_at).length;
@@ -174,6 +178,14 @@
 
           <section class="admin-section">
             <h2 class="admin-section__title">
+              Halloween Loadouts
+              <span class="admin-section__count">${state.loadouts.length} purchases · ${state.loadoutLockFlag?.value === "true" ? "🔒 LOCKED" : "🟢 OPEN"}</span>
+            </h2>
+            <div id="loadout-mgr"></div>
+          </section>
+
+          <section class="admin-section">
+            <h2 class="admin-section__title">
               Recent Activity
               <span class="admin-section__count">${state.votes.length} votes · ${state.purchases.length} purchases</span>
             </h2>
@@ -184,7 +196,74 @@
       renderRsvps();
       renderTributes();
       renderCaptionRounds();
+      renderLoadouts();
       renderActivity();
+    }
+
+    // ---- Halloween Loadouts ---------------------------------------
+    function renderLoadouts() {
+      const wrap = document.getElementById("loadout-mgr");
+      const itemById = Object.fromEntries(state.loadoutItems.map(i => [i.id, i]));
+      // Group purchases by tribute_slug
+      const byTribute = {};
+      for (const p of state.loadouts) {
+        (byTribute[p.tribute_slug] = byTribute[p.tribute_slug] || []).push(p);
+      }
+      const tribsWithPurchases = Object.keys(byTribute);
+      const tributeBySlug = Object.fromEntries(state.tributes.map(t => [t.slug, t]));
+      const isLocked = state.loadoutLockFlag?.value === "true";
+
+      const lockToggle = `
+        <div style="margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-3);">
+          <button class="admin-btn ${isLocked ? "admin-btn--danger" : ""}" id="loadout-lock-toggle">
+            ${isLocked ? "🔒 Unlock Loadout Shop" : "🔒 Lock Loadout Shop"}
+          </button>
+          <span style="font-family:var(--font-utility);font-size:0.75rem;color:#d4b870;text-transform:uppercase;letter-spacing:0.04em;">
+            ${isLocked ? "Final 4 cannot buy. Flip to allow." : "Final 4 can buy. Flip when round is starting."}
+          </span>
+        </div>
+      `;
+
+      const tributeBlocks = tribsWithPurchases.length
+        ? tribsWithPurchases.map(slug => {
+            const t = tributeBySlug[slug];
+            const purchases = byTribute[slug];
+            const totalSpent = purchases.reduce((s, p) => s + p.cost_at_purchase, 0);
+            // Group purchases by item id
+            const counts = {};
+            for (const p of purchases) counts[p.item_id] = (counts[p.item_id] || 0) + 1;
+            const tagsHtml = Object.entries(counts)
+              .map(([id, c]) => `<span class="loadout-tag">${itemById[id]?.name || id}${c > 1 ? ` × ${c}` : ""}</span>`)
+              .join("");
+            return `
+              <div class="admin-rsvp">
+                <div class="admin-rsvp__head">
+                  <span class="admin-rsvp__name">${t ? t.name : slug}</span>
+                  <span class="admin-rsvp__chip">${t ? `Bal: ${(t.credits ?? 0).toLocaleString()}` : ""}</span>
+                  <span class="admin-rsvp__chip admin-rsvp__chip--yes">Spent: ${totalSpent}</span>
+                  <span class="admin-rsvp__chip">${purchases.length} items</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">${tagsHtml}</div>
+              </div>
+            `;
+          }).join("")
+        : `<div class="admin-empty">No loadouts purchased yet.</div>`;
+
+      wrap.innerHTML = lockToggle + tributeBlocks;
+
+      document.getElementById("loadout-lock-toggle")?.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = "Saving…";
+        try {
+          await setEventStateFlag("loadout_locked", isLocked ? "false" : "true");
+          await refresh();
+        } catch (err) {
+          console.error(err);
+          btn.disabled = false;
+          btn.textContent = "Failed";
+        }
+      });
     }
 
     // ---- Caption Round Manager ---------------------------------
