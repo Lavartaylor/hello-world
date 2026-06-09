@@ -136,17 +136,17 @@
       const subheading = document.getElementById("subheading");
       const body = document.getElementById("body");
 
-      await new Promise(r => typeInto(heading, "OPENING BET", {
-        speed: 95, jitter: 30, ding: false, clicks: false, onDone: r
+      await new Promise(r => typeInto(heading, "PICK A WINNER", {
+        speed: 55, jitter: 22, ding: false, clicks: false, onDone: r
+      }));
+      await wait(300);
+
+      await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  OPENING BET", {
+        speed: 35, jitter: 18, ding: false, clicks: false, onDone: r
       }));
       await wait(400);
 
-      await new Promise(r => typeInto(subheading, "75TH ANNUAL HUNGER GAMES  ·  WAGER REGISTRATION", {
-        speed: 60, jitter: 25, ding: false, clicks: false, onDone: r
-      }));
-      await wait(600);
-
-      const proclamation = `Each citizen of Panem is permitted ONE wager on the eventual victor. Selection is final. The Capitol records all bets in perpetuity.`;
+      const proclamation = `Choose the citizen you believe will win the games. You get ONE bet — locked the moment you confirm. Pick wisely.`;
       await new Promise(r => typeInto(body, proclamation, {
         speed: 55, jitter: 28, sentencePause: 450, clicks: false, ding: false, onDone: r
       }));

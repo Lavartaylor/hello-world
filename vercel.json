@@ -8,7 +8,11 @@
     { "source": "/shop/:slug", "destination": "/shop" },
     { "source": "/shop/:slug/", "destination": "/shop" },
     { "source": "/admin/:secret", "destination": "/admin" },
-    { "source": "/admin/:secret/", "destination": "/admin" }
+    { "source": "/admin/:secret/", "destination": "/admin" },
+    { "source": "/challenge/:slug", "destination": "/challenge" },
+    { "source": "/challenge/:slug/", "destination": "/challenge" },
+    { "source": "/challenge/w:n/:slug", "destination": "/challenge/w:n" },
+    { "source": "/challenge/w:n/:slug/", "destination": "/challenge/w:n" }
   ],
   "headers": [
     {

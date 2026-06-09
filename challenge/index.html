@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>This Week's Challenge — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">CHALLENGE TERMINAL</span>
+      <div class="broadcast-hud" id="hud" hidden>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+        <div class="broadcast-hud__row broadcast-hud__row--points">
+          <span class="broadcast-hud__label">Credits</span>
+          <span class="broadcast-hud__value" id="hud-credits">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <div id="content"></div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { ensureAudioReady } from "/scripts/audio.js";
+    import { fetchTribute } from "/scripts/supabase.js";
+    import { getSlug, getCurrentWeek } from "/scripts/data.js";
+
+    const WEEKS = {
+      1: { name: "The Cornucopia",     blurb: "Pick your weapon. Play your mini-game. Top scorers earn the most credits.", route: "/challenge/w1" },
+      2: { name: "The Telephone",      blurb: "Drawing chain. Hilarious finals revealed at week's end.",                    route: "/challenge/w2" },
+      3: { name: "The Caption",        blurb: "Weird photo drops. Best caption wins. Vote for the funniest.",              route: "/challenge/w3" },
+      4: { name: "The Auction",        blurb: "Sealed-bid on mystery lots. Capitol can boost or spike contents.",          route: "/challenge/w4" },
+      5: { name: "The Final Bracket",  blurb: "Single-elimination weapon tournament. Top 6 = Final 6 finalists.",          route: "/challenge/w5" }
+    };
+
+    async function run() {
+      const slug = getSlug();
+      const tribute = slug ? await fetchTribute(slug) : null;
+
+      if (tribute) {
+        document.getElementById("hud").hidden = false;
+        document.getElementById("hud-name").textContent = tribute.name.toUpperCase();
+        document.getElementById("hud-credits").textContent = (tribute.credits ?? 0).toLocaleString();
+      }
+
+      const week = getCurrentWeek();
+      const w = WEEKS[week] || WEEKS[5];
+      const root = document.getElementById("content");
+      const playHref = tribute ? `${w.route}/${tribute.slug}` : w.route;
+
+      root.innerHTML = `
+        <div class="screen is-active" style="opacity:1; transform:none; text-align:center; padding-top:0;">
+          <div style="font-family:var(--font-utility);font-weight:700;font-size:0.9rem;color:#d4b870;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--sp-2);">
+            Week ${week}
+          </div>
+          <h1 class="screen-form__title" style="font-size:clamp(2rem, 7vw, 3.5rem);">${w.name}</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:clamp(1rem, 3.5vw, 1.25rem);color:#fff8e0;max-width:42ch;margin:var(--sp-3) auto var(--sp-6);line-height:1.4;text-shadow:-1px 0 rgba(0,0,0,0.85),1px 0 rgba(0,0,0,0.85),0 -1px rgba(0,0,0,0.85),0 1px rgba(0,0,0,0.85);">
+            ${w.blurb}
+          </p>
+          <a href="${playHref}" class="key is-ready" style="display:inline-block;text-decoration:none;">
+            Enter the Challenge
+            <span class="key__caption">${tribute ? `Citizen ${tribute.name.toUpperCase()}` : "Open your personal terminal link"}</span>
+          </a>
+
+          ${tribute ? "" : `
+            <p style="font-family:var(--font-utility);font-weight:500;font-size:0.85rem;color:#ad8a40;text-transform:uppercase;margin-top:var(--sp-7);max-width:36ch;margin-left:auto;margin-right:auto;line-height:1.4;">
+              No citizen detected. Use the personal /challenge/{your-name} link the Gamemakers sent you.
+            </p>
+          `}
+        </div>
+      `;
+    }
+
+    ensureAudioReady();
+    run().catch(err => {
+      console.error(err);
+      document.getElementById("content").innerHTML = `<p style="color:#ff7070;text-align:center;font-family:var(--font-utility);">Transmission error — check console.</p>`;
+    });
+  </script>
+</body>
+</html>

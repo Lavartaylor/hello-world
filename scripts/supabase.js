@@ -177,3 +177,77 @@ export async function fetchRecentPurchases(limit = 20) {
   if (error) throw error;
   return data || [];
 }
+
+// --- Caption (W3) helpers -----------------------------------------
+
+export async function fetchActiveCaptionRound() {
+  const { data, error } = await supabase
+    .from("hg_caption_rounds")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchAllCaptionRounds() {
+  const { data, error } = await supabase
+    .from("hg_caption_rounds")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function submitCaption({ round_id, tribute_slug, text }) {
+  const { data, error } = await supabase
+    .from("hg_captions")
+    .upsert({ round_id, tribute_slug, text }, { onConflict: "round_id,tribute_slug" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchCaption(round_id, tribute_slug) {
+  const { data, error } = await supabase
+    .from("hg_captions")
+    .select("*")
+    .eq("round_id", round_id)
+    .eq("tribute_slug", tribute_slug)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchCaptionsForRound(round_id) {
+  const { data, error } = await supabase
+    .from("hg_captions")
+    .select("*")
+    .eq("round_id", round_id);
+  if (error) throw error;
+  return data || [];
+}
+
+// --- Current week (used by /challenge dispatcher) -----------------
+
+// Hard-coded for now; can be moved into a config table later.
+// Week ranges are inclusive; check is by today's date against the schedule.
+export function getCurrentWeek() {
+  // Halloween 2026 schedule (every week opens Sunday)
+  const SCHEDULE = [
+    { week: 1, opens: "2026-09-28", closes: "2026-10-04" },
+    { week: 2, opens: "2026-10-05", closes: "2026-10-11" },
+    { week: 3, opens: "2026-10-12", closes: "2026-10-18" },
+    { week: 4, opens: "2026-10-19", closes: "2026-10-25" },
+    { week: 5, opens: "2026-10-26", closes: "2026-10-30" }
+  ];
+  const today = new Date().toISOString().slice(0, 10);
+  for (const s of SCHEDULE) {
+    if (today >= s.opens && today <= s.closes) return s.week;
+  }
+  // Outside any week — return the next upcoming week, or 5 if past
+  const upcoming = SCHEDULE.find(s => s.opens > today);
+  return upcoming ? upcoming.week : 5;
+}

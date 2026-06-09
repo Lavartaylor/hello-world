@@ -1051,49 +1051,117 @@ body.broadcast::before { display: none; }  /* page-level vignette handled by .cr
   .tuner-knob__caption { font-size: 0.65rem; max-width: 120px; }
 }
 
+/* Mobile block — now disabled (phones are supported). Element kept in HTML
+   to avoid a churn pass; CSS keeps it hidden at every viewport. */
+.mobile-block { display: none !important; }
+
 /* ========================================================
-   Mobile block — desktop-only experience
+   Mobile / phone optimization — phone is the primary target
+   for invitation traffic. Optimize tap targets, type sizing,
+   and layout for narrow viewports.
    ======================================================== */
-.mobile-block { display: none; }
-@media (max-width: 768px) {
-  .mobile-block {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: grid;
-    place-items: center;
-    background: #000;
-    color: #fff8e0;
-    text-align: center;
-    padding: var(--sp-7) var(--sp-5);
+@media (max-width: 700px) {
+  .broadcast-layout {
+    padding: var(--sp-4) var(--sp-4) var(--sp-7);
   }
-  .mobile-block__inner { max-width: 360px; }
-  .mobile-block__title {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 1.5rem;
-    text-transform: uppercase;
-    color: #fff8e0;
-    letter-spacing: 0.02em;
-    margin-bottom: var(--sp-4);
-    text-shadow: 0 0 20px rgba(255, 100, 100, 0.4);
+  .broadcast-main {
+    padding-top: clamp(20px, 4vh, 60px);
   }
-  .mobile-block__body {
-    font-family: var(--font-utility);
-    font-weight: 600;
-    font-size: 1rem;
-    text-transform: uppercase;
-    line-height: 1.4;
-    color: #ffe4a0;
-    margin-bottom: var(--sp-6);
+  /* Header reflows: channel on top, HUD below, both centered */
+  .broadcast-header {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-3);
   }
-  .mobile-block__small {
-    font-family: var(--font-utility);
+  .broadcast-header__channel {
     font-size: 0.7rem;
-    color: #ad8a40;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
   }
+  .broadcast-hud {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--sp-3) var(--sp-4);
+    text-align: center;
+  }
+  .broadcast-hud__row {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .broadcast-hud__label { font-size: 0.65rem; }
+  .broadcast-hud__value { font-size: 1rem; }
+  .broadcast-hud__row--points .broadcast-hud__value { font-size: 1.25rem; }
+
+  .broadcast-heading {
+    font-size: clamp(1.4rem, 6vw, 2rem);
+  }
+  .broadcast-body {
+    font-size: clamp(0.95rem, 4vw, 1.2rem);
+    max-width: 100%;
+  }
+  .broadcast-district {
+    font-size: clamp(3rem, 18vw, 5rem);
+  }
+  .broadcast-name {
+    font-size: clamp(1.6rem, 8vw, 2.5rem);
+  }
+
+  /* Form fields stack on phone */
+  .rsvp-form {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+  .rsvp-form input[type="text"],
+  .rsvp-form select {
+    font-size: 1rem; /* prevents iOS zoom on focus */
+  }
+  .rsvp-radio { font-size: 0.95rem; }
+
+  /* Vote grid — single column on narrow */
+  .vote-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-3);
+  }
+  .vote-card { padding: var(--sp-3) var(--sp-2); }
+  .vote-card__portrait { width: 72px; height: 72px; }
+  .vote-card__name { font-size: 0.85rem; }
+  .vote-card__points { font-size: 1.1rem; }
+
+  /* Shop — single column */
+  .shop-grid { grid-template-columns: 1fr; }
+
+  /* Leaderboard rows — compress to mobile shape */
+  .leaderboard__row {
+    grid-template-columns: 36px 44px 1fr auto;
+    gap: var(--sp-3);
+    padding: 10px 12px;
+  }
+  .leaderboard__seal { width: 44px; height: 44px; }
+  .leaderboard__name { font-size: 0.95rem; }
+  .leaderboard__points { font-size: 1.3rem; }
+
+  /* Tuner knob always inline on phone (no fixed-right position) */
+  .tuner-knob {
+    position: static !important;
+    transform: none !important;
+    flex-direction: row !important;
+    margin: var(--sp-4) auto !important;
+    gap: var(--sp-3);
+    justify-content: center;
+  }
+  .tuner-knob__dial { width: 88px !important; height: 88px !important; }
+  .tuner-knob__indicator { top: 5px !important; height: 16px !important; }
+  .tuner-knob__hub { width: 26px !important; height: 26px !important; }
+
+  /* Webcam modal — full viewport on phone */
+  .webcam-stage { width: 90vw; }
+  .shutter { width: 72px; height: 72px; }
+
+  /* Marquee shorter on phone */
+  .broadcast-footer { font-size: 0.7rem; padding: 6px 0; }
+
+  /* Channel guide cards stack single-col */
+  .guide { grid-template-columns: 1fr !important; }
 }
 
 /* Footer marquee — pinned to the very bottom edge of the viewport,

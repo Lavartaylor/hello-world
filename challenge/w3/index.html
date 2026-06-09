@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>The Caption — 75th Hunger Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Barlow+Condensed:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/tokens.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <style>
+    .caption-stack {
+      width: min(560px, 100%);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-5);
+    }
+    .caption-photo {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1.5px solid rgba(255, 220, 120, 0.3);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      background: #000;
+    }
+    .caption-textarea {
+      font-family: var(--font-utility);
+      font-weight: 600;
+      font-size: 1.05rem;
+      text-transform: uppercase;
+      background: transparent;
+      color: #fff8e0;
+      border: 0;
+      border-bottom: 2px solid rgba(255, 220, 120, 0.4);
+      padding: var(--sp-3) 0;
+      width: 100%;
+      outline: none;
+      resize: none;
+      line-height: 1.4;
+      text-shadow:
+        -1px 0 rgba(0, 0, 0, 0.85),
+        1px 0 rgba(0, 0, 0, 0.85),
+        0 -1px rgba(0, 0, 0, 0.85),
+        0 1px rgba(0, 0, 0, 0.85);
+    }
+    .caption-textarea:focus { border-bottom-color: #ffd870; }
+    .caption-textarea::placeholder { color: rgba(255, 248, 224, 0.35); font-style: italic; font-weight: 400; }
+
+    .caption-meta {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-utility);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #d4b870;
+      letter-spacing: 0.04em;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+    }
+
+    .caption-done {
+      text-align: center;
+      padding: var(--sp-6) 0;
+    }
+    .caption-done__label {
+      font-family: var(--font-utility);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: #86e870;
+      letter-spacing: 0.04em;
+      margin-bottom: var(--sp-3);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+    }
+    .caption-done__text {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(1.2rem, 5vw, 1.8rem);
+      color: #fff8e0;
+      text-transform: uppercase;
+      line-height: 1.2;
+      margin-bottom: var(--sp-3);
+      text-shadow:
+        -1px 0 rgba(0, 0, 0, 0.9),
+        1px 0 rgba(0, 0, 0, 0.9),
+        0 -1px rgba(0, 0, 0, 0.9),
+        0 1px rgba(0, 0, 0, 0.9);
+    }
+  </style>
+</head>
+<body class="broadcast" data-role="capitol">
+
+  <div class="crt">
+    <div class="crt__scrim"></div>
+    <div class="crt__static"></div>
+    <div class="crt__scanlines"></div>
+    <div class="crt__vignette"></div>
+    <div class="crt__flicker"></div>
+    <div class="crt__bootflash"></div>
+  </div>
+
+  <div class="broadcast-layout">
+    <header class="broadcast-header">
+      <span class="broadcast-header__channel">CH-W3 · THE CAPTION</span>
+      <div class="broadcast-hud" id="hud" hidden>
+        <div class="broadcast-hud__row">
+          <span class="broadcast-hud__label">Citizen</span>
+          <span class="broadcast-hud__value" id="hud-name">—</span>
+        </div>
+        <div class="broadcast-hud__row broadcast-hud__row--points">
+          <span class="broadcast-hud__label">Credits</span>
+          <span class="broadcast-hud__value" id="hud-credits">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="broadcast-main">
+      <div id="content">
+        <p class="admin-empty">Loading transmission…</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Inline submit knob (added by JS only when needed) -->
+  <div class="tuner-knob is-disabled" id="tuner" hidden>
+    <div class="tuner-knob__label">Submit</div>
+    <button type="button" class="tuner-knob__dial" id="dial" disabled>
+      <div class="tuner-knob__indicator"></div>
+      <div class="tuner-knob__hub"></div>
+    </button>
+    <div class="tuner-knob__caption" id="dial-caption">Write something funny</div>
+  </div>
+
+  <script type="module">
+    import { ensureAudioReady } from "/scripts/audio.js";
+    import {
+      fetchTribute, fetchActiveCaptionRound, fetchCaption, submitCaption
+    } from "/scripts/supabase.js";
+    import { getSlug } from "/scripts/data.js";
+
+    const MAX_LEN = 140;
+    let tribute = null;
+    let round = null;
+    let existing = null;
+
+    function renderEmpty(msg) {
+      document.getElementById("content").innerHTML = `
+        <div style="text-align:center; padding-top:var(--sp-6);">
+          <h1 class="screen-form__title">The Caption</h1>
+          <p style="font-family:var(--font-utility);font-weight:600;font-size:1rem;color:#ffe4a0;margin-top:var(--sp-4);text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+            ${msg}
+          </p>
+        </div>
+      `;
+    }
+
+    async function run() {
+      const slug = getSlug();
+      tribute = slug ? await fetchTribute(slug) : null;
+
+      if (!tribute) {
+        renderEmpty("No citizen detected. Use the personal link the Gamemakers sent you.");
+        return;
+      }
+
+      document.getElementById("hud").hidden = false;
+      document.getElementById("hud-name").textContent = tribute.name.toUpperCase();
+      document.getElementById("hud-credits").textContent = (tribute.credits ?? 0).toLocaleString();
+
+      round = await fetchActiveCaptionRound();
+      if (!round) {
+        renderEmpty("No caption round is live yet. The Gamemakers haven't dropped this week's photo. Check back soon.");
+        return;
+      }
+
+      existing = await fetchCaption(round.id, tribute.slug);
+      if (existing) {
+        renderDone(existing.text);
+      } else {
+        renderEditor();
+      }
+    }
+
+    function renderEditor() {
+      const root = document.getElementById("content");
+      root.innerHTML = `
+        <div class="caption-stack">
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-utility);font-weight:700;font-size:0.85rem;color:#d4b870;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--sp-2);">Week 3 · The Caption</div>
+            <h1 class="screen-form__title" style="font-size:clamp(1.6rem, 6vw, 2.6rem);">Caption This</h1>
+            <p style="font-family:var(--font-utility);font-weight:600;font-size:0.95rem;color:#ffe4a0;margin-top:var(--sp-2);line-height:1.4;text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+              ${round.prompt || "Write the funniest one-line caption. Other tributes will vote."}
+            </p>
+          </div>
+
+          <img class="caption-photo" src="${round.photo_url}" alt="">
+
+          <div>
+            <textarea class="caption-textarea" id="caption-text" rows="2" maxlength="${MAX_LEN}" placeholder="One-line caption — keep it short and brutal"></textarea>
+            <div class="caption-meta">
+              <span>One submission · cannot edit after</span>
+              <span><span id="char-count">0</span> / ${MAX_LEN}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const ta = document.getElementById("caption-text");
+      const counter = document.getElementById("char-count");
+      const tuner = document.getElementById("tuner");
+      const dial = document.getElementById("dial");
+      const caption = document.getElementById("dial-caption");
+      tuner.hidden = false;
+
+      ta.addEventListener("input", () => {
+        const v = ta.value.trim();
+        counter.textContent = ta.value.length;
+        const ok = v.length >= 3;
+        dial.disabled = !ok;
+        tuner.classList.toggle("is-disabled", !ok);
+        caption.textContent = ok ? "Turn to submit" : "Write something funny";
+      });
+
+      dial.addEventListener("click", async () => {
+        const text = ta.value.trim();
+        if (text.length < 3) return;
+        dial.disabled = true;
+        tuner.classList.add("is-active");
+        caption.textContent = "Transmitting…";
+        try {
+          await submitCaption({ round_id: round.id, tribute_slug: tribute.slug, text });
+          tuner.classList.add("is-locked");
+          caption.textContent = "Caption locked";
+          setTimeout(() => renderDone(text), 700);
+        } catch (err) {
+          console.error(err);
+          tuner.classList.remove("is-active");
+          dial.disabled = false;
+          caption.textContent = "Failed — try again";
+        }
+      });
+    }
+
+    function renderDone(text) {
+      const tuner = document.getElementById("tuner");
+      tuner.hidden = true;
+      document.getElementById("content").innerHTML = `
+        <div class="caption-stack">
+          <img class="caption-photo" src="${round.photo_url}" alt="">
+          <div class="caption-done">
+            <div class="caption-done__label">Caption Locked</div>
+            <div class="caption-done__text">“${text}”</div>
+            <p style="font-family:var(--font-utility);font-weight:500;font-size:0.85rem;color:#ad8a40;text-transform:uppercase;letter-spacing:0.04em;margin-top:var(--sp-4);text-shadow:0 1px 0 rgba(0,0,0,0.85);">
+              Voting opens once all citizens have submitted.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    ensureAudioReady();
+    run().catch(err => {
+      console.error(err);
+      renderEmpty("Transmission error — check console.");
+    });
+  </script>
+</body>
+</html>
